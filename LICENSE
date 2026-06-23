@@ -19,16 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----------------------------------------------------------------------------
-SCOPE OF THIS LICENSE
-
-The MIT license above applies ONLY to the parts of this project authored by
-BiswasHost: the macOS installer, the build scripts, the icon artwork, the
-documentation, and the modifications/typing-reorder logic in the keyboard
-layout (.keylayout) files.
-
-The bundled Bangla fonts are the property of their respective authors and are
-distributed under their own licenses (GNU GPL or SIL Open Font License). See
-the `fonts-licenses/` folder for the full per-font license details. Nothing in
-this MIT license overrides or alters those font licenses.
