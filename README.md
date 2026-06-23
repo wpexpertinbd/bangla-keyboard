@@ -31,6 +31,15 @@ including the things people miss on other Mac layouts:
 - Reph after a consonant: `স Shift+A → র্স` (`ভার্সন`).
 - ya/ra-fola: `ি ফ ্র → ফ্রি`. Independent vowels: `স ে G ি → সেই`.
 
+## Keyboard layout
+
+<p align="center">
+  <img src="assets/keyboard-layout-unicode.png" width="820" alt="Bangla Unicode keyboard layout chart">
+</p>
+
+Big white glyph = normal key; small red glyph = **Shift**. `◌` marks a vowel-sign
+(matra) or fola. Type the vowel-sign **before** the consonant it belongs to.
+
 ## Install
 
 Download the **`.dmg`** from [Releases](../../releases) and open it, then:
@@ -94,3 +103,13 @@ fonts in `src/fonts/`, and the icons in `assets/`.
 ---
 
 Made with care by **[BiswasHost](https://www.biswashost.com)** 🇧🇩
+
+## ☕ Support
+
+This project is free and open-source. If it made your Bangla typing on the Mac
+easier, you can **buy me a coffee** — it genuinely helps me keep building and
+maintaining free tools like this. 🙏
+
+- **bKash** (Personal · *Send Money*): **`01710378396`**
+
+ধন্যবাদ! / Thank you!
