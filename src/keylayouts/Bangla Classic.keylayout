@@ -1,7 +1,7 @@
 <?XML version="1.1" encoding="UTF-8"?>
 <!DOCTYPE keyboard PUBLIC "" "file://localhost/System/Library/DTDs/KeyboardLayout.dtd">
 <!--Last edited by Ukelele version 2.2.3 on 2012-11-15 at 17:12 (BDT)-->
-<keyboard group="126" id="-19013" name="Bangla Classic" maxout="3">
+<keyboard group="126" id="-19014" name="Bangla Classic" maxout="3">
     <layouts>
         <layout first="0" last="17" modifiers="Modifiers" mapSet="ANSI"/>
         <layout first="18" last="18" modifiers="Modifiers" mapSet="JIS"/>
@@ -24,8 +24,8 @@
         <keyMapSelect mapIndex="3">
             <modifier keys="caps"/>
         </keyMapSelect>
-    <keyMapSelect mapIndex="5"><modifier keys="command caps? anyOption?"/></keyMapSelect>
-    <keyMapSelect mapIndex="6"><modifier keys="anyShift command caps? anyOption?"/></keyMapSelect>
+    <keyMapSelect mapIndex="5"><modifier keys="command anyControl? anyOption? caps?"/></keyMapSelect>
+    <keyMapSelect mapIndex="6"><modifier keys="anyShift command anyControl? anyOption? caps?"/></keyMapSelect>
   </modifierMap>
     <keyMapSet id="ANSI">
         <keyMap index="0">
