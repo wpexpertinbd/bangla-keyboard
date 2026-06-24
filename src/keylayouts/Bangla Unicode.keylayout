@@ -1,7 +1,7 @@
 <?XML version="1.1" encoding="UTF-8"?>
 <!DOCTYPE keyboard PUBLIC "" "file://localhost/System/Library/DTDs/KeyboardLayout.dtd">
 <!--Last edited by Ukelele version 2.1.6 on 2011-07-30 at 18:46 (GMT+06:00)-->
-<keyboard group="126" id="-19006" name="Bangla Unicode" maxout="4">
+<keyboard group="126" id="-19007" name="Bangla Unicode" maxout="4">
     <layouts>
         <layout first="0" last="17" modifiers="Modifiers" mapSet="ANSI"/>
         <layout first="18" last="18" modifiers="Modifiers" mapSet="JIS"/>
@@ -615,7 +615,7 @@
             <when state="hasanta" next="hasanta_a-kar"/>
         </action>
         <action id="aa">
-            <when state="none" output="&#x0985;"/>
+            <when state="none" next="aa"/>
         </action>
         <action id="aa-kar"><when state="Pic_h" output="িআ"/><when state="Pec_h" output="েআ"/><when state="Poic_h" output="ৈআ"/>
             <when state="none" output="&#x09BE;"/>
