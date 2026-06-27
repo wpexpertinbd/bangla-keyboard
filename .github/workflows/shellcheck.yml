@@ -2,7 +2,7 @@ name: ShellCheck
 on:
   push:
     paths:
-      - 'src/build/**'
+      - 'macos/src/build/**'
       - '.github/workflows/shellcheck.yml'
   pull_request:
   workflow_dispatch:
@@ -14,4 +14,4 @@ jobs:
       - name: Run ShellCheck on installer scripts
         run: |
           shellcheck --version
-          shellcheck src/build/build.sh src/build/scripts/preinstall src/build/scripts/postinstall
+          shellcheck macos/src/build/build.sh macos/src/build/scripts/preinstall macos/src/build/scripts/postinstall
