@@ -18,6 +18,7 @@ import Carbon.HIToolbox
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let audio = AudioCapture()
+    private let speechEN = SpeechEN()
     private var mode = 0                 // 0 off, 1 Bangla, 2 English
     private var bnFail = 0
     private var bnLang = "bn-BD"
@@ -33,7 +34,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         audio.onUtterance = { [weak self] pcm in self?.handleUtterance(pcm) }
 
+        // English = on-device SFSpeechRecognizer (reliable/live; the Google key's en-US is throttled).
+        speechEN.onState = { [weak self] talking in
+            DispatchQueue.main.async { if self?.mode == 2 { self?.renderIcon(talking: talking) } }
+        }
+        speechEN.onText = { t in
+            let out = AppDelegate.finish(t, bangla: false)
+            DispatchQueue.main.async { Inject.text(out) }
+        }
+
         AVCaptureDevice.requestAccess(for: .audio) { _ in }   // prompt early
+        SpeechEN.authorize { _ in }                           // prompt for speech recognition
         registerHotkeys()
     }
 
@@ -71,19 +82,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func setMode(_ m: Int) {
         if mode == m {                                  // same mode -> turn off
-            mode = 0; audio.stop(); renderIcon(); return
+            stopAll(); mode = 0; renderIcon(); return
         }
+        stopAll()
         mode = m; bnFail = 0; bnLang = "bn-BD"
         do {
-            audio.stop()
-            try audio.start()
+            if m == 1 {
+                try audio.start()                       // Bangla -> VAD + Google bn-BD
+            } else if speechEN.available {
+                try speechEN.start()                    // English -> on-device recognizer
+            } else {
+                try audio.start()                       // English fallback -> Google en-US (throttle-prone)
+            }
         } catch {
             mode = 0; renderIcon()
-            notify("Microphone unavailable", "Could not start audio capture.")
+            notify(m == 2 ? "English voice unavailable"
+                          : "Microphone unavailable",
+                   m == 2 ? "Allow Speech Recognition + Microphone in System Settings → Privacy & Security, then try again."
+                          : "Could not start audio capture. Allow Microphone access and try again.")
             return
         }
         renderIcon()
     }
+
+    private func stopAll() { audio.stop(); speechEN.stop() }
 
     // MARK: recognition
     private func handleUtterance(_ pcm: Data) {
@@ -130,7 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         a.informativeText = "Free voice typing for the Bangla Keyboard.\n⌃⌥S Bangla · ⌃⌥D English.\nNothing is stored; mic is live only while listening.\n\nBiswasHost · MIT"
         a.runModal()
     }
-    @objc private func quit() { audio.stop(); NSApp.terminate(nil) }
+    @objc private func quit() { stopAll(); NSApp.terminate(nil) }
     private func notify(_ title: String, _ body: String) {
         let a = NSAlert(); a.messageText = title; a.informativeText = body; a.runModal()
     }

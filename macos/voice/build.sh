@@ -29,6 +29,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSUIElement</key><true/>
   <key>NSMicrophoneUsageDescription</key>
   <string>Bangla Voice listens to your microphone only while a voice mode is on, to type what you say. Nothing is recorded or stored.</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>Bangla Voice uses on-device speech recognition for English voice typing. Nothing is recorded or stored.</string>
   <key>NSHumanReadableCopyright</key><string>BiswasHost — MIT. Not affiliated with any commercial keyboard/font vendor.</string>
 </dict></plist>
 PLIST
