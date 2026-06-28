@@ -8,8 +8,12 @@ that types what you say, in any app — Bangla or English, free, nothing stored.
 
 ## Use
 - **⌃⌥S** — Bangla voice · **⌃⌥D** — English voice · press again (or the menu) to stop.
-- Speak → the recognized text is inserted at the cursor. A `।` (Bangla) / `.` (English) is
-  appended per utterance; English is capitalized.
+- Speak → the recognized text is inserted at the cursor.
+- **Punctuation is spoken** (free STT returns none), like Google Docs / Gboard voice typing:
+  say the mark **alone, after a short pause**. Bangla: `দাঁড়ি`→`।`, `কমা`→`,`, `প্রশ্ন`→`?`,
+  `বিস্ময়`→`!`, `সেমিকোলন`→`;`, `কোলন`→`:`. English: “full stop”→`.`, “comma”→`,`,
+  “question mark”→`?`. A mark is only inserted when it's the **whole** utterance, so the same
+  word inside a sentence (“আমার একটা প্রশ্ন আছে”) stays as text.
 - The menu-bar mic shows state: **dim = off, blue = listening, green = hearing speech**.
 
 ## How it works (parity with Windows — see [`../../SPEC.md`](../../SPEC.md) and [`../../docs/MAC-PARITY-TODO.md`](../../docs/MAC-PARITY-TODO.md))

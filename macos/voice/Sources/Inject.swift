@@ -17,6 +17,14 @@ enum Inject {
         }
     }
 
+    /// One Delete/Backspace (virtual key 0x33) — used to remove the trailing space before
+    /// a standalone punctuation mark so it attaches to the previous word.
+    static func backspace() {
+        let src = CGEventSource(stateID: .hidSystemState)
+        CGEvent(keyboardEventSource: src, virtualKey: 0x33, keyDown: true)?.post(tap: .cgSessionEventTap)
+        CGEvent(keyboardEventSource: src, virtualKey: 0x33, keyDown: false)?.post(tap: .cgSessionEventTap)
+    }
+
     private static func post(_ units: [UniChar], keyDown: Bool, src: CGEventSource?) {
         guard let ev = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: keyDown) else { return }
         var u = units

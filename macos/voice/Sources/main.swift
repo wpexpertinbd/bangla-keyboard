@@ -40,8 +40,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.async { if self?.mode == 2 { self?.renderIcon(talking: talking) } }
         }
         speechEN.onText = { t in
-            let out = AppDelegate.finish(t, bangla: false)
-            DispatchQueue.main.async { Inject.text(out) }
+            let out = Punct.apply(t, bangla: false)
+            DispatchQueue.main.async { AppDelegate.inject(out) }
         }
 
         AVCaptureDevice.requestAccess(for: .audio) { _ in }   // prompt early
@@ -158,32 +158,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let isBn = (mode == 1)
         sttQueue.async { [weak self] in
             guard let self else { return }
-            let raw = STT.recognize(pcm: pcm, lang: lang)
-            let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            let r = STT.recognize(pcm: pcm, lang: lang)
+            let t = r.text.trimmingCharacters(in: .whitespacesAndNewlines)
             if t.isEmpty {
-                if isBn {                                // throttle/empty -> bn-IN fallback
+                // Fall back to bn-IN only on a REAL HTTP error (network/4xx/5xx), NOT on
+                // silence (a clean 2xx with no transcript) — else a brief pause flips Bangla
+                // to the weaker recognizer. Require ~3 real errors.
+                if isBn && r.httpError {
                     self.bnFail += 1
-                    if self.bnFail >= 2 && self.bnLang == "bn-BD" { self.bnLang = "bn-IN" }
+                    if self.bnFail >= 3 && self.bnLang == "bn-BD" { self.bnLang = "bn-IN" }
                 }
                 return
             }
             if isBn { self.bnFail = 0 }
-            let out = Self.finish(t, bangla: isBn)
-            DispatchQueue.main.async { Inject.text(out) }
+            let out = Punct.apply(t, bangla: isBn)
+            DispatchQueue.main.async { AppDelegate.inject(out) }
         }
     }
 
-    /// Punctuation/capitalization rules from voice.html.
-    static func finish(_ text: String, bangla: Bool) -> String {
-        var t = text
-        let endsPunct = t.hasSuffix("।") || t.hasSuffix(".") || t.hasSuffix("!") || t.hasSuffix("?")
-        if bangla {
-            if !endsPunct { t += "।" }
-        } else {
-            if let f = t.first { t = f.uppercased() + t.dropFirst() }
-            if !endsPunct { t += "." }
-        }
-        return t + " "
+    /// Inject text, first backspacing the previous utterance's trailing space when this one
+    /// starts with a standalone punctuation mark (so "…আছি" + "।" -> "…আছি।").
+    static func inject(_ out: String) {
+        if Punct.leadsWithMark(out) { Inject.backspace() }
+        Inject.text(out)
     }
 
     // MARK: misc
@@ -194,7 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func about() {
         let a = NSAlert()
         a.messageText = "Bangla Voice"
-        a.informativeText = "Free voice typing for the Bangla Keyboard.\n⌃⌥S Bangla · ⌃⌥D English.\nNothing is stored; mic is live only while listening.\n\nBiswasHost · MIT"
+        a.informativeText = "Free voice typing for the Bangla Keyboard.\n⌃⌥S Bangla · ⌃⌥D English.\n\nSay punctuation as a separate word (after a pause): দাঁড়ি → ।, কমা → ,, প্রশ্ন → ?  ·  English: “full stop”, “comma”, “question mark”.\n\nNothing is stored; mic is live only while listening.\n\nBiswasHost · MIT"
         a.runModal()
     }
     @objc private func quit() { stopAll(); NSApp.terminate(nil) }

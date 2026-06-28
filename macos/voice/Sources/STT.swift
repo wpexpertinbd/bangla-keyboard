@@ -20,16 +20,20 @@ enum STT {
         return URLSession(configuration: c)
     }()
 
-    /// POST raw L16 PCM (16 kHz mono) -> recognized transcript ("" on any failure/throttle).
-    /// Synchronous (call off the main thread). `lang` e.g. "bn-BD", "bn-IN", "en-US".
-    static func recognize(pcm: Data, rate: Int = 16000, lang: String) -> String {
+    struct Result { let text: String; let httpError: Bool }
+
+    /// POST raw L16 PCM (16 kHz mono) -> transcript + a REAL-error flag.
+    /// `httpError` is true ONLY on a network failure or a non-2xx/3xx status (incl. throttle
+    /// 4xx/5xx). A clean 2xx with no transcript means *silence*, NOT a failure — so the caller
+    /// falls back to bn-IN on actual throttling, not on a quiet chunk. Call off the main thread.
+    static func recognize(pcm: Data, rate: Int = 16000, lang: String) -> Result {
         var comps = URLComponents(string: "https://www.google.com/speech-api/v2/recognize")!
         comps.queryItems = [
             URLQueryItem(name: "output", value: "json"),
             URLQueryItem(name: "lang", value: lang),
             URLQueryItem(name: "key", value: key),
         ]
-        guard let url = comps.url else { return "" }
+        guard let url = comps.url else { return Result(text: "", httpError: true) }
         var req = URLRequest(url: url, timeoutInterval: 15)
         req.httpMethod = "POST"
         req.httpShouldHandleCookies = false
@@ -38,15 +42,21 @@ enum STT {
         req.httpBody = pcm
 
         var out = ""
+        var httpErr = true                       // assume error until a clean 2xx/3xx
         let sem = DispatchSemaphore(value: 0)
-        let task = session.dataTask(with: req) { data, _, _ in
+        let task = session.dataTask(with: req) { data, resp, _ in
             defer { sem.signal() }
-            guard let data = data, let body = String(data: data, encoding: .utf8) else { return }
-            out = firstTranscript(body)
+            guard let http = resp as? HTTPURLResponse else { return }   // network error -> httpErr stays true
+            if (200..<400).contains(http.statusCode) {
+                httpErr = false                  // clean response; empty just means silence
+                if let data = data, let body = String(data: data, encoding: .utf8) {
+                    out = firstTranscript(body)
+                }
+            }                                    // 4xx/5xx -> httpErr stays true (real throttle/error)
         }
         task.resume()
         sem.wait()
-        return out
+        return Result(text: out, httpError: httpErr)
     }
 
     /// The endpoint returns line-delimited JSON; pull the first "transcript":"..." value.
