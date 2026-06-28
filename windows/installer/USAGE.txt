@@ -30,8 +30,13 @@ VOICE TYPING  (optional, needs internet)
   Ctrl + Alt + D     English voice  (speak English)
   Press the same shortcut again to stop. A small microphone icon appears near the
   clock while listening — blue = listening, green = hearing your voice — and goes
-  away when you stop. A "।" (Bangla) or "." (English) is added at the end of each
-  sentence automatically.
+  away when you stop.
+
+  PUNCTUATION — say the mark's name (online speech gives no punctuation on its own):
+    Bangla :  "দাঁড়ি" -> ।    "কমা" -> ,    "প্রশ্ন" -> ?    "বিস্ময়" -> !
+    English:  "period"/"full stop" -> .   "comma" -> ,   "question mark" -> ?   "exclamation mark" -> !
+  Example: say "তুমি কেমন আছো প্রশ্ন" and you get "তুমি কেমন আছো?".
+  (Say the punctuation word right after the sentence; nothing is auto-inserted on a pause.)
 
   - Bangla uses a free online speech service for correct Bangladeshi spelling: speak
     a sentence, pause briefly, and the text appears. English types as you speak.

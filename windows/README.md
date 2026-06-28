@@ -1,6 +1,6 @@
 # Bangla Keyboard — Windows port
 
-> **Status: shipping — the tray app is released (`win-v1.1.1`); the TSF IME is experimental.**
+> **Status: shipping — the tray app is released (`win-v1.1.2`); the TSF IME is experimental.**
 > - ✅ **Engine ported to C++** ([`engine/`](engine/)) — **13/13** SPEC §7 corpus
 >   (compiled `enginetest.exe`; `engine/verify.py` is a Python mirror).
 > - ✅ **TSF text service** ([`tsf/`](tsf/)) — builds to `BanglaKeyboard.dll` (x64)
@@ -18,8 +18,9 @@
 >   (Ctrl+Alt+S)** or **English (Ctrl+Alt+D)** and it types at the cursor. Free online
 >   STT — correct Bangladeshi **bn-BD** via Google's legacy endpoint (POSTed from
 >   native code), English via the browser **Web Speech** API; an off-screen WebView2
->   captures the mic, a tray icon shows state, "।"/"." is auto-appended. Opt-in at
->   install. See [`SECURITY.md`](../SECURITY.md) for the privacy/network audit.
+>   captures the mic, a tray icon shows state, and you speak punctuation ("দাঁড়ি"→।,
+>   "কমা"→,, "প্রশ্ন"→?). Opt-in at install. See [`SECURITY.md`](../SECURITY.md) for the
+>   privacy/network audit.
 > - ✅ **Runnable demo** — `bangla-demo.exe`: type on your keyboard, see live Bangla.
 > - 🟡 **Installer** ([`installer/`](installer/)) — `register.bat`/`unregister.bat`
 >   work; a packaged signed installer is still TODO.

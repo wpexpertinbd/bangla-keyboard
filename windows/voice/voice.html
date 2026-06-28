@@ -20,6 +20,30 @@
   const dbg  = t => { const e = document.getElementById('s'); if (e) e.textContent = t; };
   let mode = '', rec = null, bnFallback = false;
 
+  // STT returns NO punctuation -> the user SPEAKS it. Map spoken words to marks,
+  // attach to the preceding text (no auto end-mark on every pause anymore).
+  const PUNCT_BN = { 'দাঁড়ি':'।','দাড়ি':'।','দাড়ী':'।','ফুলস্টপ':'।','কমা':',','কহনা':',','কহানা':',','কম্মা':',',
+    'প্রশ্ন':'?','প্রশ্নবোধক':'?','প্রশ্নচিহ্ন':'?','প্রসন':'?','বিস্ময়':'!','বিস্ময়বোধক':'!','আশ্চর্যবোধক':'!',
+    'সেমিকোলন':';','কোলন':':','হাইফেন':'-','ড্যাশ':'-' };
+  const PUNCT_EN = { 'comma':',','period':'.','dot':'.','question':'?','exclamation':'!','semicolon':';','colon':':','hyphen':'-','dash':'-' };
+  function applyPunct(text, m) {
+    let s = (text || '').trim(); if (!s) return '';
+    const bn = m.indexOf('bn') === 0;
+    if (!bn) s = s.replace(/\bfull stop\b/gi, '.').replace(/\bquestion mark\b/gi, '?')
+                  .replace(/\bexclamation mark\b/gi, '!');
+    const map = bn ? PUNCT_BN : PUNCT_EN;
+    let out = '';
+    for (const w of s.split(/\s+/)) {
+      if (!w) continue;
+      const mk = map[bn ? w : w.toLowerCase()];
+      if (mk) out = out.replace(/\s+$/, '') + mk + ' ';
+      else if (/^[.,?!;:।-]$/.test(w)) out = out.replace(/\s+$/, '') + w + ' ';
+      else out += w + ' ';
+    }
+    if (!bn) out = out.replace(/(^\s*|[.!?]\s+)([a-z])/g, (x, p, c) => p + c.toUpperCase());
+    return out.trim() + ' ';
+  }
+
   // ---- Web Speech: English, and the bn-IN fallback -------------------------
   function startWebSpeech(lang, isBn) {
     stopAll();
@@ -31,10 +55,8 @@
     rec.onresult = e => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i]; if (!r.isFinal) continue;
-        let t = r[0].transcript.trim(); if (!t) continue;
-        if (isBn) { if (!/[।.!?]$/.test(t)) t += '।'; }
-        else { t = t.charAt(0).toUpperCase() + t.slice(1); if (!/[।.!?]$/.test(t)) t += '.'; }
-        send('t:' + t + ' ');
+        const t = applyPunct(r[0].transcript, isBn ? 'bn' : 'en');   // spoken punctuation
+        if (t.trim()) send('t:' + t);
       }
     };
     try { rec.start(); dbg('listening ' + lang); } catch (e) {}

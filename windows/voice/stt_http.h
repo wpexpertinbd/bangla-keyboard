@@ -39,12 +39,16 @@ inline std::wstring extractTranscript(const std::string& body) {
     return w;
 }
 
-// POST raw L16 PCM -> transcript (empty on any failure/throttle).
-inline std::wstring googleSTT(const void* pcm, DWORD pcmLen, int rate, const wchar_t* lang) {
-    std::wstring result;
+// POST raw L16 PCM -> transcript. Empty can mean "silence" (HTTP 2xx, no result)
+// OR a failure; *httpErr is set ONLY on a real network/HTTP error (incl. throttle
+// 4xx/5xx), so the caller falls back to bn-IN on actual throttling, not on a silent
+// chunk.
+inline std::wstring googleSTT(const void* pcm, DWORD pcmLen, int rate, const wchar_t* lang, bool* httpErr = nullptr) {
+    if (httpErr) *httpErr = false;
+    std::wstring result; bool err = true;   // assume error until a clean 2xx response
     HINTERNET hS = WinHttpOpen(L"BanglaVoice/1.1", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
                                WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-    if (!hS) return result;
+    if (!hS) { if (httpErr) *httpErr = true; return result; }
     HINTERNET hC = WinHttpConnect(hS, L"www.google.com", INTERNET_DEFAULT_HTTPS_PORT, 0);
     if (hC) {
         wchar_t path[256];
@@ -55,20 +59,27 @@ inline std::wstring googleSTT(const void* pcm, DWORD pcmLen, int rate, const wch
             wchar_t hdr[64]; wsprintfW(hdr, L"Content-Type: audio/l16; rate=%d", rate);
             if (WinHttpSendRequest(hR, hdr, -1L, (LPVOID)pcm, pcmLen, pcmLen, 0) &&
                 WinHttpReceiveResponse(hR, nullptr)) {
-                std::string body; DWORD avail = 0;
-                do {
-                    if (!WinHttpQueryDataAvailable(hR, &avail) || !avail) break;
-                    std::string chunk(avail, 0); DWORD got = 0;
-                    if (!WinHttpReadData(hR, &chunk[0], avail, &got)) break;
-                    body.append(chunk.data(), got);
-                } while (avail > 0);
-                result = extractTranscript(body);
+                DWORD status = 0, slen = sizeof(status);
+                WinHttpQueryHeaders(hR, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                    WINHTTP_HEADER_NAME_BY_INDEX, &status, &slen, WINHTTP_NO_HEADER_INDEX);
+                if (status >= 200 && status < 400) {
+                    err = false;            // clean response -> empty just means silence
+                    std::string body; DWORD avail = 0;
+                    do {
+                        if (!WinHttpQueryDataAvailable(hR, &avail) || !avail) break;
+                        std::string chunk(avail, 0); DWORD got = 0;
+                        if (!WinHttpReadData(hR, &chunk[0], avail, &got)) break;
+                        body.append(chunk.data(), got);
+                    } while (avail > 0);
+                    result = extractTranscript(body);
+                }
             }
             WinHttpCloseHandle(hR);
         }
         WinHttpCloseHandle(hC);
     }
     WinHttpCloseHandle(hS);
+    if (httpErr) *httpErr = err;
     return result;
 }
 

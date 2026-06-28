@@ -63,6 +63,51 @@ static void injectText(const std::wstring& s) {
     }
     SendInput((UINT)in.size(), in.data(), sizeof(INPUT));
 }
+static void sendBackspace(int n) {
+    std::vector<INPUT> in; in.reserve(n * 2);
+    for (int i = 0; i < n; ++i) {
+        INPUT d = {}; d.type = INPUT_KEYBOARD; d.ki.wVk = VK_BACK; in.push_back(d);
+        INPUT u = {}; u.type = INPUT_KEYBOARD; u.ki.wVk = VK_BACK; u.ki.dwFlags = KEYEVENTF_KEYUP; in.push_back(u);
+    }
+    SendInput((UINT)in.size(), in.data(), sizeof(INPUT));
+}
+static bool isPunctMark(wchar_t c) {
+    return c == L'\x0964' || c == L',' || c == L'?' || c == L'!' || c == L';' || c == L':' || c == L'.';
+}
+// Google STT returns NO punctuation, so the user speaks it: "দাঁড়ি"->। "কমা"->,
+// etc. Replace those spoken words with the mark, attached to the preceding text.
+static std::wstring applyBanglaPunct(const std::wstring& in) {
+    auto markFor = [](const std::wstring& w) -> const wchar_t* {
+        if (w == L"দাঁড়ি" || w == L"দাড়ি" || w == L"দাড়ী" || w == L"ফুলস্টপ") return L"\x0964";  // ।
+        if (w == L"কমা" || w == L"কহনা" || w == L"কহানা" || w == L"কম্মা" || w == L"কমা।") return L",";
+        if (w == L"প্রশ্ন" || w == L"প্রশ্নবোধক" || w == L"প্রশ্নচিহ্ন" || w == L"প্রসন") return L"?";
+        if (w == L"বিস্ময়" || w == L"বিস্ময়বোধক" || w == L"আশ্চর্যবোধক") return L"!";
+        if (w == L"সেমিকোলন") return L";";
+        if (w == L"কোলন") return L":";
+        if (w == L"হাইফেন" || w == L"ড্যাশ") return L"-";
+        return nullptr;
+    };
+    std::wstring out; size_t i = 0, n = in.size();
+    while (i < n) {
+        while (i < n && in[i] == L' ') ++i;
+        size_t j = i; while (j < n && in[j] != L' ') ++j;
+        if (j > i) {
+            std::wstring w = in.substr(i, j - i);
+            const wchar_t* mark = markFor(w);
+            if (mark) { while (!out.empty() && out.back() == L' ') out.pop_back(); out += mark; out += L' '; }
+            else { out += w; out += L' '; }
+        }
+        i = j;
+    }
+    return out;
+}
+// inject, fixing the space before a leading punctuation mark across utterances
+// (e.g. "...খাই" then a separate "দাঁড়ি" -> backspace the space -> "...খাই।").
+static void injectSmart(const std::wstring& s) {
+    size_t k = 0; while (k < s.size() && s[k] == L' ') ++k;
+    if (k < s.size() && isPunctMark(s[k])) sendBackspace(1);
+    injectText(s);
+}
 
 static std::string base64decode(const std::string& s) {
     DWORD n = 0;
@@ -135,7 +180,7 @@ struct MsgHandler : Handler<ICoreWebView2WebMessageReceivedEventHandler> {
         if (FAILED(a->TryGetWebMessageAsString(&raw)) || !raw) return S_OK;
         std::wstring m(raw); CoTaskMemFree(raw);
         if (m.rfind(L"s:", 0) == 0) { trayState(m == L"s:speak"); return S_OK; }
-        if (m.rfind(L"t:", 0) == 0) { injectText(m.substr(2)); return S_OK; }
+        if (m.rfind(L"t:", 0) == 0) { injectSmart(m.substr(2)); return S_OK; }   // page already punctuated
         if (m.rfind(L"a:", 0) == 0) {
             int n = WideCharToMultiByte(CP_ACP, 0, m.c_str() + 2, -1, nullptr, 0, nullptr, nullptr);
             std::string b64(n > 0 ? n - 1 : 0, 0);
@@ -143,9 +188,11 @@ struct MsgHandler : Handler<ICoreWebView2WebMessageReceivedEventHandler> {
             std::string pcm = base64decode(b64);
             if (pcm.size() > 3200) {                     // ignore <0.1s blips
                 std::thread([pcm]() {
-                    std::wstring t = stt::googleSTT(pcm.data(), (DWORD)pcm.size(), 16000, L"bn-BD");
-                    if (!t.empty()) { g_fail = 0; injectText(t + L"\x0964 "); }   // append "।"
-                    else if (++g_fail >= 2) PostMessageW(g_hwnd, WM_VOICE_FALLBACK, 0, 0);
+                    bool httpErr = false;
+                    std::wstring t = stt::googleSTT(pcm.data(), (DWORD)pcm.size(), 16000, L"bn-BD", &httpErr);
+                    if (!t.empty()) { g_fail = 0; injectSmart(applyBanglaPunct(t)); }  // spoken punctuation
+                    else if (httpErr && ++g_fail >= 3)                                 // only on real throttle, not silence
+                        PostMessageW(g_hwnd, WM_VOICE_FALLBACK, 0, 0);
                 }).detach();
             }
             return S_OK;

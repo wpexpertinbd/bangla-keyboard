@@ -15,7 +15,7 @@
 | OS | What it is | Status | Folder |
 |----|-----------|--------|--------|
 | 🍎 **macOS** | Native `.keylayout` (Unicode + Classic) + smart installer `.pkg`/`.dmg`; **voice typing** companion app | ✅ **shipping** (voice: in testing) | [`macos/`](macos/) |
-| 🪟 **Windows** | Tray app (Bangla Unicode + Classic + **voice typing**) running the shared engine, + a TSF IME | ✅ **v1.1.1** | [`windows/`](windows/) |
+| 🪟 **Windows** | Tray app (Bangla Unicode + Classic + **voice typing**) running the shared engine, + a TSF IME | ✅ **v1.1.2** | [`windows/`](windows/) |
 | 🐧 **Linux** | IBus / Fcitx5 engine running the shared engine | ⬜ planned | [`linux/`](linux/) |
 
 **macOS users:** grab the latest `.pkg`/`.dmg` from [**Releases**](../../releases) and see
