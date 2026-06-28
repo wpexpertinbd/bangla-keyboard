@@ -29,7 +29,13 @@ final class AudioCapture {
         guard !collecting else { return }
         let input = engine.inputNode
         let fmt = input.inputFormat(forBus: 0)
-        inRate = fmt.sampleRate > 0 ? fmt.sampleRate : 48000.0
+        // No mic access / no device -> invalid format. Bail with an error instead of
+        // letting installTap() throw an uncatchable ObjC exception and crash.
+        guard fmt.sampleRate > 0, fmt.channelCount > 0 else {
+            throw NSError(domain: "AudioCapture", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "No microphone input available"])
+        }
+        inRate = fmt.sampleRate
         buf.removeAll(); speaking = false; silenceMs = 0
 
         input.installTap(onBus: 0, bufferSize: 4096, format: fmt) { [weak self] pcm, _ in

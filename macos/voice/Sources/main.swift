@@ -13,6 +13,7 @@
 // Needs: Microphone permission (capture) + Accessibility permission (to type into apps).
 import AppKit
 import AVFoundation
+import Speech
 import Carbon.HIToolbox
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -80,29 +81,73 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleBangla()  { setMode(1) }
     @objc private func toggleEnglish() { setMode(2) }
 
+    /// Gate on permissions FIRST (so we never call AVAudioEngine without mic access — that
+    /// throws an uncatchable ObjC exception and crashes). Re-entrant: async grants call back in.
     func setMode(_ m: Int) {
-        if mode == m {                                  // same mode -> turn off
-            stopAll(); mode = 0; renderIcon(); return
+        if mode == m { stopAll(); mode = 0; renderIcon(); return }   // toggle off
+
+        // 1) Microphone (required for both).
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized: break
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .audio) { ok in
+                DispatchQueue.main.async { ok ? self.setMode(m) : self.permAlert("Microphone") }
+            }
+            return
+        default:
+            permAlert("Microphone"); return
         }
+
+        // 2) Speech Recognition (English on-device path).
+        if m == 2 {
+            switch SFSpeechRecognizer.authorizationStatus() {
+            case .authorized, .denied, .restricted: break      // denied -> HTTP en-US fallback
+            case .notDetermined:
+                SpeechEN.authorize { _ in DispatchQueue.main.async { self.setMode(2) } }
+                return
+            @unknown default: break
+            }
+        }
+
+        beginMode(m)
+    }
+
+    private func beginMode(_ m: Int) {
         stopAll()
         mode = m; bnFail = 0; bnLang = "bn-BD"
         do {
-            if m == 1 {
-                try audio.start()                       // Bangla -> VAD + Google bn-BD
-            } else if speechEN.available {
-                try speechEN.start()                    // English -> on-device recognizer
-            } else {
-                try audio.start()                       // English fallback -> Google en-US (throttle-prone)
-            }
+            if m == 1 { try audio.start() }                        // Bangla -> Google bn-BD
+            else if speechEN.available { try speechEN.start() }    // English -> on-device
+            else { try audio.start() }                             // English fallback -> Google en-US
         } catch {
             mode = 0; renderIcon()
-            notify(m == 2 ? "English voice unavailable"
-                          : "Microphone unavailable",
-                   m == 2 ? "Allow Speech Recognition + Microphone in System Settings → Privacy & Security, then try again."
-                          : "Could not start audio capture. Allow Microphone access and try again.")
+            notify("Couldn’t start the microphone",
+                   "Make sure no other app is using the mic, and that Microphone access is enabled in System Settings → Privacy & Security.")
             return
         }
         renderIcon()
+        // Typing into other apps needs Accessibility — warn once if it's missing.
+        if !AXIsProcessTrusted() { axWarnOnce() }
+    }
+
+    private func permAlert(_ what: String) {
+        mode = 0; renderIcon()
+        let a = NSAlert()
+        a.messageText = "\(what) access is off"
+        a.informativeText = "Enable \(what) for “Bangla Voice” in System Settings → Privacy & Security → \(what), then try again."
+        a.addButton(withTitle: "Open Settings"); a.addButton(withTitle: "Cancel")
+        if a.runModal() == .alertFirstButtonReturn {
+            let leaf = what == "Microphone" ? "Privacy_Microphone" : "Privacy_SpeechRecognition"
+            if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(leaf)") { NSWorkspace.shared.open(u) }
+        }
+    }
+
+    private var axWarned = false
+    private func axWarnOnce() {
+        if axWarned { return }
+        axWarned = true
+        let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(opts)   // shows the system "grant Accessibility" prompt
     }
 
     private func stopAll() { audio.stop(); speechEN.stop() }

@@ -41,11 +41,15 @@ final class SpeechEN {
         guard !running, let rec = recognizer, rec.isAvailable else {
             throw NSError(domain: "SpeechEN", code: 1)
         }
-        speaking = false; finalizing = false; silenceMs = 0
-        startSegment()
         let input = engine.inputNode
         let fmt = input.inputFormat(forBus: 0)
-        inRate = fmt.sampleRate > 0 ? fmt.sampleRate : 48000.0
+        guard fmt.sampleRate > 0, fmt.channelCount > 0 else {
+            throw NSError(domain: "SpeechEN", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "No microphone input available"])
+        }
+        speaking = false; finalizing = false; silenceMs = 0
+        inRate = fmt.sampleRate
+        startSegment()
         input.installTap(onBus: 0, bufferSize: 4096, format: fmt) { [weak self] buf, _ in
             self?.feed(buf)
         }
