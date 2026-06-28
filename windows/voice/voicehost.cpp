@@ -30,6 +30,10 @@
 #include <thread>
 #include <atomic>
 
+#ifndef LOAD_LIBRARY_SEARCH_SYSTEM32
+#define LOAD_LIBRARY_SEARCH_SYSTEM32 0x00000800
+#endif
+
 static ICoreWebView2Controller* g_controller = nullptr;
 static ICoreWebView2*           g_webview    = nullptr;
 static HWND   g_hwnd = nullptr;
@@ -53,6 +57,7 @@ static void injectText(const std::wstring& s) {
     if (s.empty()) return;
     std::vector<INPUT> in; in.reserve(s.size() * 2);
     for (wchar_t c : s) {
+        if (c < 0x20) continue;   // never inject control chars (Enter/Tab/etc.) from STT text
         INPUT d = {}; d.type = INPUT_KEYBOARD; d.ki.wScan = c; d.ki.dwFlags = KEYEVENTF_UNICODE; in.push_back(d);
         INPUT u = {}; u.type = INPUT_KEYBOARD; u.ki.wScan = c; u.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP; in.push_back(u);
     }
@@ -209,6 +214,10 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     HANDLE once = CreateMutexW(nullptr, TRUE, L"BanglaVoiceSingleton");
     if (once && GetLastError() == ERROR_ALREADY_EXISTS) return 0;
 
+    // harden DLL search: implicit loads resolve from System32 only (no app-dir/CWD
+    // planting). We load our one non-system DLL (WebView2Loader) by full path below.
+    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32);
+
     // let the page's AudioContext run without a user gesture (we capture, not play)
     SetEnvironmentVariableW(L"WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", L"--autoplay-policy=no-user-gesture-required");
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -222,7 +231,9 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     g_icoListen = makeMicIcon(RGB(37, 99, 235));    // blue
     g_icoTalk   = makeMicIcon(RGB(34, 160, 90));    // green
 
-    HMODULE loader = LoadLibraryW(L"WebView2Loader.dll");
+    wchar_t dll[MAX_PATH]; GetModuleFileNameW(nullptr, dll, MAX_PATH);   // load by FULL path
+    PathRemoveFileSpecW(dll); PathAppendW(dll, L"WebView2Loader.dll");   // (no search/planting)
+    HMODULE loader = LoadLibraryW(dll);
     if (!loader) { MessageBoxW(nullptr, L"WebView2Loader.dll missing next to bangla-voice.exe.", L"Bangla Voice", MB_OK | MB_ICONERROR); return 1; }
     auto CreateEnv = (PFN_CreateEnv)GetProcAddress(loader, "CreateCoreWebView2EnvironmentWithOptions");
     wchar_t udf[MAX_PATH]; GetTempPathW(MAX_PATH, udf); lstrcatW(udf, L"BanglaKeyboardVoice");

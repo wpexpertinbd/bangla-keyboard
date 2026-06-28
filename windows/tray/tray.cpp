@@ -28,6 +28,10 @@
 #include "../engine/unicode_table.h"
 #include "../engine/classic_table.h"
 
+#ifndef LOAD_LIBRARY_SEARCH_SYSTEM32
+#define LOAD_LIBRARY_SEARCH_SYSTEM32 0x00000800
+#endif
+
 using bangla::KLEngine;
 using Str = std::u16string;
 
@@ -393,6 +397,7 @@ static LRESULT CALLBACK wndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
 
 int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     g_hInst = hInst;
+    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32);  // harden DLL search (no app-dir/CWD)
 
     HANDLE once = CreateMutexW(nullptr, TRUE, L"BanglaKeyboardTraySingleton");
     if (once && GetLastError() == ERROR_ALREADY_EXISTS) {

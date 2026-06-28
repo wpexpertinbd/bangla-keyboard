@@ -60,11 +60,14 @@ input method sees keystrokes. Audit findings:
   reads one registry value (`HKCU\Software\BanglaKeyboard\VoiceEnabled`) to decide
   whether to start the optional voice companion, and launches it by a fixed image
   name (`bangla-voice.exe`) from its own folder. No auto-update, no analytics.
-- **No DLL-hijacking surface (tray).** `bangla-tray.exe` is statically linked and
-  imports **only system DLLs** (`kernel32`, `user32`, `gdi32`, `shell32`,
-  `advapi32`, `msvcrt`). The optional `bangla-voice.exe` additionally loads
-  `WebView2Loader.dll` — a Microsoft redistributable shipped in the install folder —
-  by full intent; it is the only non-system DLL in the product.
+- **No DLL-hijacking surface.** Both exes call
+  `SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32)` at startup, so implicit DLL
+  loads resolve from `System32` only (no app-dir/CWD planting). `bangla-tray.exe` is
+  statically linked and imports **only system DLLs** (`kernel32`, `user32`, `gdi32`,
+  `shell32`, `advapi32`, `msvcrt`). The optional `bangla-voice.exe` loads exactly one
+  non-system DLL — `WebView2Loader.dll`, a Microsoft redistributable — and does so by
+  its **full install-folder path** (not by bare name), so the search order can't be
+  hijacked.
 - **Least privilege.** Runs as the normal user (no elevation); the installer is
   **per-user** (`%LocalAppData%`), so installing/uninstalling needs no admin.
 - **Exception-safe hook.** The hook callback is wrapped so no C++ exception can
