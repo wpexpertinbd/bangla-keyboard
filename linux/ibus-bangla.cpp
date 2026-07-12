@@ -54,34 +54,49 @@ static void show_preedit(IBusBangla* self) {
 }
 
 // Finalise the run: commit committed-text + the dangling deadkey, reset, hide preedit.
+// Self-guarded so no C++ exception can unwind into IBus's C dispatch (it's called
+// from the process/focus-out/reset/disable vfuncs).
 static void commit_run(IBusBangla* self) {
     if (!self->eng) { ibus_engine_hide_preedit_text((IBusEngine*)self); return; }
-    std::u16string all = *self->run + self->eng->peek();
-    self->eng->reset();
-    self->run->clear();
-    ibus_engine_hide_preedit_text((IBusEngine*)self);
-    if (!all.empty()) {
-        gchar* u8 = u16utf8(all);
-        ibus_engine_commit_text((IBusEngine*)self, ibus_text_new_from_string(u8));
-        g_free(u8);
+    try {
+        std::u16string all = *self->run + self->eng->peek();
+        self->eng->reset();
+        self->run->clear();
+        ibus_engine_hide_preedit_text((IBusEngine*)self);
+        if (!all.empty()) {
+            gchar* u8 = u16utf8(all);
+            ibus_engine_commit_text((IBusEngine*)self, ibus_text_new_from_string(u8));
+            g_free(u8);
+        }
+    } catch (...) {
+        self->eng->reset(); self->run->clear();
+        ibus_engine_hide_preedit_text((IBusEngine*)self);
     }
 }
 
 static gboolean ibus_bangla_process_key_event(IBusEngine* engine, guint keyval, guint keycode, guint state) {
     IBusBangla* self = (IBusBangla*)engine;
     if (state & IBUS_RELEASE_MASK) return FALSE;              // key-up: ignore
-    ensure_engine(self);
-    // Let Ctrl / Alt / Super chords (copy/paste/save/etc.) pass through untouched.
-    if (state & (IBUS_CONTROL_MASK | IBUS_MOD1_MASK | IBUS_MOD4_MASK)) { commit_run(self); return FALSE; }
-    bool shift = (state & IBUS_SHIFT_MASK) != 0;
-    unsigned scan = keycode - 8;                              // evdev == Windows Set-1 scancode
-    if (self->eng->wouldHandle(scan)) {
-        *self->run += self->eng->process(scan, shift);        // append to the live run
-        show_preedit(self);                                   // preedit = run + peek()
-        return TRUE;                                          // consumed
+    try {
+        ensure_engine(self);
+        // Let Ctrl / Alt / Super chords (copy/paste/save/etc.) pass through untouched.
+        if (state & (IBUS_CONTROL_MASK | IBUS_MOD1_MASK | IBUS_MOD4_MASK)) { commit_run(self); return FALSE; }
+        bool shift = (state & IBUS_SHIFT_MASK) != 0;
+        unsigned scan = keycode - 8;                          // evdev == Windows Set-1 scancode
+                                                              // (scan>0xFF is rejected inside KLEngine)
+        if (self->eng->wouldHandle(scan)) {
+            if (self->run->size() > 1024) commit_run(self);   // bound the in-progress run (stuck key / no boundary)
+            *self->run += self->eng->process(scan, shift);    // append to the live run
+            show_preedit(self);                               // preedit = run + peek()
+            return TRUE;                                      // consumed
+        }
+        commit_run(self);                                     // space/Enter/Backspace/punct -> finalise
+        return FALSE;                                         // and let that key through
+    } catch (...) {                                           // never unwind into IBus's C dispatch
+        if (self->eng) self->eng->reset();
+        if (self->run) self->run->clear();
+        return FALSE;
     }
-    commit_run(self);                                         // space/Enter/Backspace/punct -> finalise
-    return FALSE;                                             // and let that key through
 }
 
 static void ibus_bangla_focus_out(IBusEngine* engine) {

@@ -138,6 +138,32 @@ the mic while a mode is on and types what you say. Audited surfaces:
   without the grant. The shared Google key is the well-known public Chromium key, not a
   secret.
 
+## Linux (IBus engine)
+
+The Linux build (`linux/`, shipped as `ibus-engine-bangla`) is an IBus input-method
+engine that reuses the shared C++ `KLEngine`. There is **no voice feature** on Linux —
+it is purely a keyboard. Audit findings:
+
+- **No keystroke logging, storage, or transmission.** The engine only maps scan codes
+  to Bangla via **compile-time-constant tables** and commits the result through IBus.
+  Source review: **no file, network, socket, or process-exec calls** anywhere in the
+  engine (`grep` for `fopen`/`open`/`socket`/`connect`/`exec`/`popen`/`system`/`g_file`
+  → none; the only "connect"/"exec" hits are IBus API names and a comment). No telemetry.
+- **Runs as the user, not root, not setuid.** `ibus-daemon` launches the engine as the
+  logged-in user. The binary at `/usr/lib/ibus/ibus-engine-bangla` has mode 0755 (not
+  setuid/setgid), so it grants no elevated privilege.
+- **Bounds-safe.** IBus passes an untrusted keycode; `scan = keycode - 8` can underflow
+  to a large unsigned, but `KLEngine::wouldHandle`/`process` reject any `scan > 0xFF`
+  before indexing, so there is no out-of-bounds read. The in-progress preedit run is
+  capped (1024) against unbounded growth from a stuck key.
+- **Exception-safe.** The `process_key_event` handler (and `commit_run`) are wrapped so
+  no C++ exception can unwind into IBus's C dispatch; on any error the engine drops its
+  pending state and stays alive.
+- **Installer.** `install.sh` runs as root but performs only fixed-path `install`/file
+  writes and emits a **static** component XML (no dynamic/user input flows into any
+  command); it builds the binary as the invoking non-root user (`SUDO_USER`), never as
+  root. No downloads, no remote code.
+
 ## Known / accepted items
 
 - **Windows: unsigned + keylogger-shaped tech.** The tray app is not code-signed
