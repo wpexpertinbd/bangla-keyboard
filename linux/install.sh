@@ -14,8 +14,10 @@ echo "[1/4] build"
 # build as the invoking (non-root) user if possible, else here
 if [ -n "${SUDO_USER:-}" ]; then sudo -u "$SUDO_USER" ./build.sh; else ./build.sh; fi
 
-echo "[2/4] install binary -> $BIN"
+echo "[2/4] install binary + icons -> $BIN"
 install -Dm755 dist/ibus-engine-bangla "$BIN"
+install -Dm644 icons/bangla-unicode.png /usr/share/ibus/icons/bangla-unicode.png
+install -Dm644 icons/bangla-classic.png /usr/share/ibus/icons/bangla-classic.png
 
 echo "[3/4] install component -> $XML"
 install -d "$(dirname "$XML")"
@@ -30,12 +32,14 @@ cat > "$XML" <<EOF
   <license>MIT</license>
   <homepage>https://github.com/wpexpertinbd/bangla-keyboard</homepage>
   <textdomain>ibus-bangla</textdomain>
+  <icon>/usr/share/ibus/icons/bangla-unicode.png</icon>
   <engines>
     <engine>
       <name>bangla-unicode</name>
       <language>bn</language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
       <longname>Bangla Unicode</longname>
       <description>Bangla (Unicode) — fixed Windows-style layout</description>
+      <icon>/usr/share/ibus/icons/bangla-unicode.png</icon>
       <rank>1</rank>
     </engine>
     <engine>
@@ -43,6 +47,7 @@ cat > "$XML" <<EOF
       <language>bn</language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
       <longname>Bangla Classic</longname>
       <description>Bangla (legacy ANSI — needs a legacy ANSI Bangla font)</description>
+      <icon>/usr/share/ibus/icons/bangla-classic.png</icon>
       <rank>0</rank>
     </engine>
   </engines>
