@@ -16,7 +16,7 @@
 ## ✅ Already at parity
 - **Engine + both layouts** — Bangla Unicode + Bangla Classic, byte-identical (the
   Windows `KLEngine` runs FSM tables generated from the Mac `.keylayout`).
-- **De-branding** — no "Bijoy"/"SutonnyMJ" text anywhere (legal). Keep it that way.
+- **De-branding** — no legacy-keyboard or legacy-ANSI-font brand/trademark names anywhere (legal). Say "fixed Windows-style layout" + "legacy ANSI font". Keep it that way.
 
 ---
 
