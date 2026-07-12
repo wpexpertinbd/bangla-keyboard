@@ -35,16 +35,16 @@ cat > dist/bangla.xml <<EOF
   <engines>
     <engine>
       <name>bangla-unicode</name>
-      <language></language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
-      <longname>Bangla Unicode</longname>
+      <language>bn</language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
+      <longname>Unicode</longname>
       <description>Bangla (Unicode) — fixed Windows-style layout</description>
       <icon>$(pwd)/icons/bangla-unicode.png</icon>
       <rank>1</rank>
     </engine>
     <engine>
       <name>bangla-classic</name>
-      <language></language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
-      <longname>Bangla Classic</longname>
+      <language>bn</language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
+      <longname>Classic</longname>
       <description>Bangla (legacy ANSI — needs a legacy ANSI Bangla font)</description>
       <icon>$(pwd)/icons/bangla-classic.png</icon>
       <rank>0</rank>
