@@ -114,6 +114,18 @@ static void commit_run(IBusBangla* self) {
 static gboolean ibus_bangla_process_key_event(IBusEngine* engine, guint keyval, guint keycode, guint state) {
     IBusBangla* self = (IBusBangla*)engine;
     if (state & IBUS_RELEASE_MASK) return FALSE;              // key-up: ignore
+    // A modifier pressed on its OWN (Shift/Ctrl/Alt/Super/Caps) must NOT flush the
+    // pending deadkey — else Shift before a shifted consonant (খ = Shift+…) would
+    // commit the pending prebase vowel (ে) before it can reorder (খেলা -> েখলা).
+    switch (keyval) {
+        case IBUS_KEY_Shift_L:   case IBUS_KEY_Shift_R:
+        case IBUS_KEY_Control_L: case IBUS_KEY_Control_R:
+        case IBUS_KEY_Alt_L:     case IBUS_KEY_Alt_R:
+        case IBUS_KEY_Super_L:   case IBUS_KEY_Super_R:
+        case IBUS_KEY_Meta_L:    case IBUS_KEY_Meta_R:
+        case IBUS_KEY_Caps_Lock: case IBUS_KEY_Shift_Lock:
+            return FALSE;                                     // keep the pending deadkey
+    }
     try {
         ensure_engine(self);
         // Let Ctrl / Alt / Super chords (copy/paste/save/etc.) pass through untouched.

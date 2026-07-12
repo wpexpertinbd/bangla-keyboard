@@ -33,10 +33,14 @@ static guint scanOf(char c) {
 static void spin(int ms) { for (int i = 0; i < ms / 5; i++) { while (g_main_context_iteration(nullptr, FALSE)); g_usleep(5000); } }
 
 // The engine maps by keyval now (US layout), so feed the character as the keyval.
+// For a shifted key, send the Shift keydown FIRST like a real keyboard — this must
+// not flush a pending deadkey (regression test for the খেলা->েখলা bug).
 static void sendKey(IBusInputContext* ctx, guint keyval, gboolean shift) {
     guint state = shift ? IBUS_SHIFT_MASK : 0;
+    if (shift) { ibus_input_context_process_key_event(ctx, IBUS_KEY_Shift_L, 0, 0); spin(10); }
     ibus_input_context_process_key_event(ctx, keyval, 0, state);                       // press
     ibus_input_context_process_key_event(ctx, keyval, 0, state | IBUS_RELEASE_MASK);   // release
+    if (shift) ibus_input_context_process_key_event(ctx, IBUS_KEY_Shift_L, 0, IBUS_SHIFT_MASK | IBUS_RELEASE_MASK);
     spin(60);
 }
 
