@@ -4,8 +4,10 @@ A modern, free **Bangla keyboard layout installer for macOS** (Apple Silicon &
 Intel). It installs the traditional **fixed (positional) Bangla layout** —
 typed the same way as on Windows — plus a set of free Unicode Bangla fonts.
 
+> **Status: shipping — `v1.6.2`** (keyboard `.pkg`/`.dmg` + optional `Bangla Voice` companion).
+>
 > Built and maintained by **[BiswasHost](https://www.biswashost.com)**.
-> No Java, no background app — just native macOS keyboard layouts.
+> No Java; just native macOS keyboard layouts (voice typing is a small optional menu-bar app).
 
 <p align="center">
   <img src="assets/icon-preview-unicode.png" width="120" alt="Bangla Unicode">
