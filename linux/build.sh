@@ -15,10 +15,10 @@ echo "[1/3] engine self-test (shared KLEngine on Linux)"
 g++ -std=c++17 -O2 -I"$ENGINE" "$ENGINE/klengine_test.cpp" "$ENGINE/klengine.cpp" -o dist/kltest
 dist/kltest | grep -E '^[0-9]+/[0-9]+' | sed 's/^/      /'
 
-echo "[2/3] ibus-engine-bangla"
-g++ -std=c++17 -O2 -I"$ENGINE" $(pkg-config --cflags ibus-1.0) \
+echo "[2/3] ibus-engine-bangla (with voice: libpulse-simple + libcurl)"
+g++ -std=c++17 -O2 -I"$ENGINE" $(pkg-config --cflags ibus-1.0 libpulse-simple libcurl) \
     ibus-bangla.cpp "$ENGINE/klengine.cpp" \
-    -o dist/ibus-engine-bangla $(pkg-config --libs ibus-1.0)
+    -o dist/ibus-engine-bangla $(pkg-config --libs ibus-1.0 libpulse-simple libcurl)
 
 echo "[3/3] local component XML (standalone test)"
 cat > dist/bangla.xml <<EOF

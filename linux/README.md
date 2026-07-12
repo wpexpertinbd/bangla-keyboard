@@ -23,10 +23,15 @@ plus the shared engine's own corpus (20/20 Unicode + 12/12 Classic) on Linux.
 
 ## Requirements
 ```sh
-sudo apt install build-essential pkg-config libibus-1.0-dev ibus   # Debian/Ubuntu
-# Fedora:  sudo dnf install gcc-c++ pkgconf-pkg-config ibus-devel ibus
-# Arch:    sudo pacman -S base-devel ibus
+# Debian/Ubuntu — keyboard + voice typing:
+sudo apt install build-essential pkg-config libibus-1.0-dev ibus \
+                 libpulse-dev libcurl4-openssl-dev libnotify-bin
+# Fedora:  sudo dnf install gcc-c++ pkgconf-pkg-config ibus-devel ibus \
+#                           pulseaudio-libs-devel libcurl-devel libnotify
+# Arch:    sudo pacman -S base-devel ibus libpulse curl libnotify
 ```
+(`libpulse` + `libcurl` are for **voice typing**; `libnotify` shows the "voice on"
+toast. Voice is optional — the keyboard builds/works without a mic.)
 
 ## Install — Debian / Ubuntu (`.deb`, easiest)
 Download `bangla-keyboard-ibus_<ver>_amd64.deb` from the
@@ -63,8 +68,21 @@ compatible legacy ANSI Bangla font from your own legitimate source and select it
 your app. **Bangla Unicode** works with any Bangla Unicode font (most distros ship one;
 e.g. `sudo apt install fonts-beng`).
 
+## Voice typing (optional, needs internet)
+While a Bangla engine is active, press **Ctrl+Alt+S** (Bangla) or **Ctrl+Alt+D**
+(English), speak, and the recognized text is typed at the cursor (committed through
+IBus, so it works on X11 **and** Wayland). Press again to stop; a toast shows the state.
+- **Free, nothing stored** — English + Bangla go to the same free online speech service
+  the Windows/macOS builds use (native `libcurl`, no browser); correct Bangladeshi `bn-BD`.
+- **Punctuation is spoken** (STT gives none): say the mark ALONE after a pause —
+  "দাঁড়ি"→।, "কমা"→,, "প্রশ্ন"→?, "বিস্ময়"→! (English: comma / period / question mark /
+  exclamation mark). A word inside a sentence stays a word.
+- Needs a working microphone (PulseAudio/PipeWire) + internet. It's an inherent part of
+  the engine; nothing else to install beyond the runtime libs above.
+
 ## Files
-- `ibus-bangla.cpp` — the IBus engine (reuses `../windows/engine` KLEngine).
+- `ibus-bangla.cpp` — the IBus engine (reuses `../windows/engine` KLEngine) + voice.
+- `stt_curl.h` — free online STT over libcurl (Bangla `bn-BD` + English).
 - `ibus-selftest.cpp` — end-to-end key→commit test client.
 - `build.sh` / `install.sh` / `uninstall.sh` / `test.sh`.
 - `dist/` — build output (git-ignored).

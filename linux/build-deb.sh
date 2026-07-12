@@ -59,7 +59,7 @@ Package: bangla-keyboard-ibus
 Version: ${VER}
 Architecture: ${ARCH}
 Maintainer: BiswasHost <benjamin.biswas@gmail.com>
-Depends: ibus, libstdc++6, libc6
+Depends: ibus, libstdc++6, libc6, libpulse0, libnotify-bin, libcurl4t64 | libcurl4
 Section: utils
 Priority: optional
 Homepage: https://github.com/wpexpertinbd/bangla-keyboard

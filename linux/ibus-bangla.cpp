@@ -18,11 +18,27 @@
 // Build: see build.sh (g++ + `pkg-config --cflags --libs ibus-1.0`).
 #include <ibus.h>
 #include <string>
+#include <vector>
+#include <thread>
+#include <atomic>
+#include <cmath>
+#include <cstdint>
+#include <pulse/simple.h>
+#include <pulse/error.h>
 #include "klengine.h"
 #include "unicode_table.h"
 #include "classic_table.h"
+#include "stt_curl.h"
 
-typedef struct _IBusBangla      { IBusEngine parent; bangla::KLEngine* eng; std::u16string* run; } IBusBangla;
+// Voice-typing state (heap-allocated; GObject gives raw memory so no C++ ctors run).
+struct VoiceState {
+    std::thread       th;
+    std::atomic<bool> stop{false};
+    std::atomic<int>  mode{0};      // 0 off, 1 Bangla, 2 English
+    int  fail = 0;                  // consecutive HTTP errors -> stop
+};
+
+typedef struct _IBusBangla      { IBusEngine parent; bangla::KLEngine* eng; std::u16string* run; VoiceState* voice; } IBusBangla;
 typedef struct _IBusBanglaClass { IBusEngineClass parent; } IBusBanglaClass;
 
 GType ibus_bangla_get_type(void);
@@ -111,6 +127,109 @@ static void commit_run(IBusBangla* self) {
     }
 }
 
+// ===== Voice typing (Ctrl+Alt+S Bangla / Ctrl+Alt+D English) ================
+// Free online STT (native libcurl -> Google's L16 endpoint; see stt_curl.h), so it
+// works on X11 AND Wayland: the recognized text is committed THROUGH IBus (the input
+// method commit is Wayland-safe, unlike external synthetic key injection). Runs only
+// while this engine is active. Mic via PulseAudio/PipeWire (libpulse-simple).
+
+static void voice_notify(const char* msg) {
+    gchar* cmd = g_strdup_printf("notify-send -t 1500 -a 'Bangla Keyboard' \"%s\"", msg);
+    g_spawn_command_line_async(cmd, nullptr);
+    g_free(cmd);
+}
+
+// Spoken punctuation: convert ONLY when the WHOLE utterance is exactly the mark word
+// (said alone), so a real word inside a sentence stays a word. Else pass the text.
+static std::string apply_punct(const std::string& in, int mode) {
+    size_t a = in.find_first_not_of(" \t\r\n");
+    if (a == std::string::npos) return "";
+    size_t b = in.find_last_not_of(" \t\r\n");
+    std::string w = in.substr(a, b - a + 1);
+    if (mode == 1) {
+        if (w=="দাঁড়ি"||w=="দাড়ি"||w=="দাড়ী"||w=="ফুলস্টপ") return "।";
+        if (w=="কমা"||w=="কহনা"||w=="কহানা"||w=="কম্মা")       return ",";
+        if (w=="প্রশ্ন"||w=="প্রশ্নবোধক"||w=="প্রশ্নচিহ্ন"||w=="প্রসন") return "?";
+        if (w=="বিস্ময়"||w=="বিস্ময়বোধক"||w=="আশ্চর্যবোধক")   return "!";
+        if (w=="সেমিকোলন") return ";";
+        if (w=="কোলন")     return ":";
+    } else {
+        std::string l; for (char c : w) l += (char)tolower((unsigned char)c);
+        if (l=="comma") return ",";
+        if (l=="period"||l=="full stop"||l=="dot") return ".";
+        if (l=="question mark"||l=="question")     return "?";
+        if (l=="exclamation mark"||l=="exclamation") return "!";
+        if (l=="semicolon") return ";";
+        if (l=="colon")     return ":";
+    }
+    return in;
+}
+
+// commit recognized text on the MAIN thread (IBus is not thread-safe).
+struct CommitData { IBusEngine* engine; gchar* text; };
+static gboolean commit_idle(gpointer p) {
+    CommitData* d = (CommitData*)p;
+    ibus_engine_commit_text(d->engine, ibus_text_new_from_string(d->text));
+    g_free(d->text); g_object_unref(d->engine); delete d;
+    return G_SOURCE_REMOVE;
+}
+static void commit_from_thread(IBusEngine* engine, const std::string& utf8) {
+    if (utf8.empty()) return;
+    CommitData* d = new CommitData{ (IBusEngine*)g_object_ref(engine), g_strdup(utf8.c_str()) };
+    g_idle_add(commit_idle, d);
+}
+
+// capture thread: 16 kHz mono PCM -> RMS/700ms-silence VAD -> per-utterance STT.
+static void voice_run(IBusBangla* self, int mode) {
+    pa_sample_spec ss; ss.format = PA_SAMPLE_S16LE; ss.rate = 16000; ss.channels = 1;
+    pa_buffer_attr attr; attr.maxlength = (uint32_t)-1; attr.fragsize = 3200;
+    attr.tlength = attr.prebuf = attr.minreq = (uint32_t)-1;
+    int perr = 0;
+    pa_simple* s = pa_simple_new(nullptr, "Bangla Voice", PA_STREAM_RECORD, nullptr,
+                                 "speech", &ss, nullptr, &attr, &perr);
+    if (!s) { voice_notify("Voice: microphone unavailable"); self->voice->mode.store(0); return; }
+    std::vector<int16_t> utter;
+    bool speaking = false; int silenceMs = 0;
+    const int N = 1600; int16_t buf[N];                       // 0.1 s
+    while (!self->voice->stop.load()) {
+        if (pa_simple_read(s, buf, sizeof(buf), &perr) < 0) break;
+        double sum = 0; for (int i = 0; i < N; i++) { double v = buf[i]; sum += v * v; }
+        double rms = std::sqrt(sum / N) / 32768.0;
+        if (rms > 0.012) { speaking = true; silenceMs = 0; utter.insert(utter.end(), buf, buf + N); }
+        else if (speaking) {
+            utter.insert(utter.end(), buf, buf + N);
+            silenceMs += 100;
+            if (silenceMs > 700) {                            // utterance end
+                speaking = false; silenceMs = 0;
+                if (utter.size() > 1600) {
+                    bool herr = false;
+                    const char* lang = (mode == 1) ? "bn-BD" : "en-US";
+                    std::string t = stt::googleSTT(utter.data(), (long)(utter.size() * 2), 16000, lang, &herr);
+                    if (!t.empty()) { self->voice->fail = 0; commit_from_thread((IBusEngine*)self, apply_punct(t, mode) + " "); }
+                    else if (herr && ++self->voice->fail >= 3) { self->voice->stop.store(true); }
+                }
+                utter.clear();
+            }
+        }
+    }
+    pa_simple_free(s);
+}
+
+static void voice_stop(IBusBangla* self) {
+    if (!self->voice || self->voice->mode.load() == 0) return;
+    self->voice->stop.store(true);
+    if (self->voice->th.joinable()) self->voice->th.join();
+    self->voice->mode.store(0);
+    voice_notify("Voice off");
+}
+static void voice_toggle(IBusBangla* self, int mode) {
+    if (self->voice->mode.load() == mode) { voice_stop(self); return; }
+    voice_stop(self);
+    self->voice->stop.store(false); self->voice->fail = 0; self->voice->mode.store(mode);
+    self->voice->th = std::thread(voice_run, self, mode);
+    voice_notify(mode == 1 ? "\xF0\x9F\x8E\xA4 Bangla voice on" : "\xF0\x9F\x8E\xA4 English voice on");
+}
+
 static gboolean ibus_bangla_process_key_event(IBusEngine* engine, guint keyval, guint keycode, guint state) {
     IBusBangla* self = (IBusBangla*)engine;
     if (state & IBUS_RELEASE_MASK) return FALSE;              // key-up: ignore
@@ -128,7 +247,14 @@ static gboolean ibus_bangla_process_key_event(IBusEngine* engine, guint keyval, 
     }
     try {
         ensure_engine(self);
-        // Let Ctrl / Alt / Super chords (copy/paste/save/etc.) pass through untouched.
+        // Voice hotkeys (only while this engine is active): Ctrl+Alt+S = Bangla voice,
+        // Ctrl+Alt+D = English voice. Recognized text is committed through IBus.
+        if ((state & IBUS_CONTROL_MASK) && (state & IBUS_MOD1_MASK)) {
+            guint k = (keyval >= 'A' && keyval <= 'Z') ? keyval + 32 : keyval;
+            if (k == 's') { commit_run(self); voice_toggle(self, 1); return TRUE; }
+            if (k == 'd') { commit_run(self); voice_toggle(self, 2); return TRUE; }
+        }
+        // Let other Ctrl / Alt / Super chords (copy/paste/save/etc.) pass through.
         if (state & (IBUS_CONTROL_MASK | IBUS_MOD1_MASK | IBUS_MOD4_MASK)) { commit_run(self); return FALSE; }
         bool shift = (state & IBUS_SHIFT_MASK) != 0;
         unsigned scan = scanFromKeyval(keyval);               // US keyval -> Set-1 scancode (X11+Wayland safe)
@@ -156,6 +282,7 @@ static void ibus_bangla_reset(IBusEngine* engine) {
     IBUS_ENGINE_CLASS(ibus_bangla_parent_class)->reset(engine);
 }
 static void ibus_bangla_disable(IBusEngine* engine) {
+    voice_stop((IBusBangla*)engine);                 // stop voice when the engine is switched away
     commit_run((IBusBangla*)engine);
     IBUS_ENGINE_CLASS(ibus_bangla_parent_class)->disable(engine);
 }
@@ -163,9 +290,12 @@ static void ibus_bangla_disable(IBusEngine* engine) {
 static void ibus_bangla_init(IBusBangla* self) {
     self->eng = nullptr;
     self->run = new std::u16string();
+    self->voice = new VoiceState();
 }
 static void ibus_bangla_finalize(GObject* obj) {
     IBusBangla* self = (IBusBangla*)obj;
+    voice_stop(self);
+    delete self->voice; self->voice = nullptr;
     delete self->eng; self->eng = nullptr;
     delete self->run; self->run = nullptr;
     G_OBJECT_CLASS(ibus_bangla_parent_class)->finalize(obj);
