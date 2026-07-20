@@ -83,7 +83,7 @@ This project is free and open-source, on macOS, Windows, and Linux. If it made y
 Bangla typing easier, you can **buy me a coffee** — it genuinely helps me keep building
 and maintaining free tools like this. 🙏
 
-- **bKash** (Personal · *Send Money*): **`01710378396`**
+- **bKash/Nagad** (Personal · *Send Money*): **`01710378396`**
 
 ধন্যবাদ! / Thank you!
 
