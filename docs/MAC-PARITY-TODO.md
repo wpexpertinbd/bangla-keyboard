@@ -151,3 +151,11 @@ under `win-vX.Y.Z` with `--latest=false`. (See the BHServe repo's `docs/WINDOWS-
 for the canonical multi-platform release flow this mirrors.) ⚠️ The platforms' Claudes both
 push `main` — expect non-fast-forward pushes; `git fetch` + `rebase origin/main` (the README
 platforms-table rows conflict — keep BOTH), then move the tag to the rebased commit.
+
+**⭐ Release-TITLE convention (ALL OS — so users spot their platform fast):** prefix every
+release title with the OS name + clean version, `--title "<OS> vX.Y.Z — <short desc>"`:
+- macOS → `macOS v1.6.2 — <desc>`   (tag `v1.6.2`, `--latest`)
+- Windows → `Windows v1.1.3 — <desc>`   (tag `win-v1.1.3`, `--latest=false`)
+- Linux → `Linux v1.1.1 — <desc>`   (tag `linux-v1.1.1`, `--latest=false`)
+The **title** always uses the bare version (`macOS v1.6.2`), even though the macOS **tag** has
+no OS prefix. Follow this on every future build.
