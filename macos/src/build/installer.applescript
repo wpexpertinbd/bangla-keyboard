@@ -60,7 +60,7 @@ end doInstall
 on doUninstall()
 	set kl to "/Library/Keyboard Layouts/"
 	set fdir to "/Library/Fonts/"
-	set layoutFiles to {"Bangla Unicode.keylayout", "Bangla Unicode.icns", "Bangla Classic.keylayout", "Bangla Classic.icns"}
+	set layoutFiles to {"Bangla Unicode.keylayout", "Bangla Unicode.icns", "Bangla Classic.keylayout", "Bangla Classic.icns", "Bangla Phonetic.keylayout", "Bangla Phonetic.icns"}
 	set fontFiles to {"AdorshoLipi_20-07-2007.ttf", "AponaLohit.ttf", "Bangla.ttf", "BenSen.ttf", "BenSenHandwriting.ttf", "Lohit_14-04-2007.ttf", "Mukti_1.99_PR.ttf", "Siyamrupali.ttf", "SolaimanLipi.ttf", "akaashnormal.ttf", "kalpurush.ttf", "mitra.ttf", "muktinarrow.ttf", "sagarnormal.ttf"}
 	set cmd to "/bin/rm -f"
 	repeat with p in layoutFiles

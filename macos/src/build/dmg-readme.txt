@@ -1,6 +1,6 @@
 ============================================================
   Bangla Keyboard for Mac  -  by BiswasHost
-  github.com/wpexpertinbd/bangla-keyboard-mac
+  github.com/wpexpertinbd/bangla-keyboard
 ============================================================
 
 This app is FREE, open-source and safe -- but it is NOT signed by Apple
@@ -35,14 +35,15 @@ HOW TO INSTALL  (English)
    macOS only loads new keyboard layouts after a fresh login.
 
 8. System Settings -> Keyboard -> Text Input -> Edit... -> "+" -> Bangla
-   ->  add  "Bangla Unicode"  (and/or  "Bangla Classic").
+   ->  add  "Bangla Unicode", "Bangla Classic"  and/or  "Bangla Phonetic".
 
 9. Switch keyboards with the menu-bar flag icon, or press  Control + Space.
 
 To uninstall later:  open this app again -> choose  Uninstall.
 
-TIP: An even simpler installer, "Bangla Keyboard.pkg", is on the GitHub
-Releases page. Right-click it -> Open -> Open  (no Settings step needed).
+TIP: You can also use "Bangla Keyboard.pkg" from the GitHub Releases page.
+It is unsigned too: double-click it -> Done -> System Settings ->
+Privacy & Security -> Open Anyway  (same steps as above).
 
 
 ------------------------------------------------------------
@@ -74,17 +75,32 @@ Releases page. Right-click it -> Open -> Open  (no Settings step needed).
     নতুন কীবোর্ড লেআউট ম্যাক শুধু নতুন লগইনের পরেই দেখায়।
 
 ৮।  System Settings -> Keyboard -> Text Input -> Edit... -> "+" -> Bangla
-    থেকে  "Bangla Unicode"  (ও/বা  "Bangla Classic")  যোগ করুন।
+    থেকে  "Bangla Unicode", "Bangla Classic"  ও/বা  "Bangla Phonetic"  যোগ করুন।
 
 ৯।  কীবোর্ড বদলান মেনুবারের পতাকা আইকন দিয়ে, অথবা  Control + Space  চাপুন।
 
 পরে আনইনস্টল করতে:  এই অ্যাপটি আবার খুলে  Uninstall  বেছে নিন।
 
-টিপ: আরও সহজ ইনস্টলার  "Bangla Keyboard.pkg"  GitHub Releases পেজে আছে।
-ওটায়  right-click -> Open -> Open  করলেই হবে (Settings-এ যেতে হবে না)।
+টিপ:  "Bangla Keyboard.pkg"  GitHub Releases পেজেও আছে। এটাও সাইন করা নয়:
+ডাবল-ক্লিক -> Done -> System Settings -> Privacy & Security -> Open Anyway
+(উপরের মতোই)।
 
 
 ------------------------------------------------------------
+------------------------------------------------------------
+TYPING - Bangla Phonetic  (type it the way it sounds)
+------------------------------------------------------------
+Bangla appears AS YOU TYPE.  Examples:
+   ami -> আমি      tumi -> তুমি      kemon -> কেমন     bangla -> বাংলা
+   O  = ো :  bhalO -> ভালো    (a plain o after a consonant is silent: keno -> কেন)
+   c = চ   ch = ছ      s = স   sh / S = শ   Sh = ষ
+   t/T = ত/ট   d/D = দ/ড   n/N = ন/ণ   r/R = র/ড়   rri = ঋ / ৃ  (krriShok -> কৃষক)
+   Conjuncts form by themselves:  golpo -> গল্প   okkhor -> অক্ষর
+   rr = reph  (korrmo -> কর্ম)    y = য-ফলা (bybohar)    w = ব-ফলা (bishwo)
+   .  = ।     ,, = হসন্ত     ^ = ঁ     : = ঃ     $ = ৳
+   `  (the key left of 1) keeps two letters apart:  jan`te -> জানতে
+
+
 ------------------------------------------------------------
 TYPING TIP - Bangla Classic (ও-কার / এ-কার)
 ------------------------------------------------------------

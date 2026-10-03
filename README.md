@@ -1,7 +1,7 @@
 <h1 align="center">Bangla Keyboard</h1>
 
 <p align="center">
-  A free, open-source <b>fixed-layout Bangla keyboard</b> for <b>macOS, Windows, and Linux</b>.<br>
+  A free, open-source <b>fixed-layout Bangla keyboard</b> for <b>macOS, Windows, and Linux</b> — plus a <b>phonetic</b> layout on macOS.<br>
   Type a prebase vowel before its consonant (the Windows-order habit) and get correct Unicode order.<br>
   No trademarked branding, no proprietary fonts — emits standard Unicode.
 </p>
@@ -14,7 +14,7 @@
 
 | OS | What it is | Status | Folder |
 |----|-----------|--------|--------|
-| 🍎 **macOS** | Native `.keylayout` (Unicode + Classic) + smart installer `.pkg`/`.dmg`; **voice typing** companion app (spoken punctuation) | ✅ **v1.6.2** | [`macos/`](macos/) |
+| 🍎 **macOS** | Native `.keylayout` (Unicode + Classic + **Phonetic**) + smart installer `.pkg`/`.dmg`; **voice typing** companion app (spoken punctuation) | ✅ **v1.7.0** | [`macos/`](macos/) |
 | 🪟 **Windows** | Tray app (Bangla Unicode + Classic + **voice typing**) running the shared engine, + a TSF IME | ✅ **v1.1.3** | [`windows/`](windows/) |
 | 🐧 **Linux** | IBus engine (Bangla Unicode + Classic + **voice typing**) running the shared engine | ✅ **v1.1.1** (Debian/Ubuntu + any IBus distro) | [`linux/`](linux/) |
 
@@ -23,8 +23,8 @@
 Grab your platform's build from the [**releases page**](https://github.com/wpexpertinbd/bangla-keyboard/releases), then:
 
 ### 🍎 macOS
-1. Download **`Bangla Keyboard.pkg`** from the [latest release](https://github.com/wpexpertinbd/bangla-keyboard/releases/latest) → **right-click → Open** (unsigned build).
-2. Log out/in, then **System Settings → Keyboard → Text Input → Edit → `+` → Bangla** → add **Bangla Unicode** (and/or **Classic**). Switch with **⌃Space**.
+1. Download **`Bangla Keyboard.pkg`** from the [latest release](https://github.com/wpexpertinbd/bangla-keyboard/releases/latest) → double-click → **Done** → **System Settings → Privacy & Security → Open Anyway** (unsigned build).
+2. Log out/in, then **System Settings → Keyboard → Text Input → Edit → `+` → Bangla** → add **Bangla Unicode**, **Classic** and/or **Phonetic** (type by sound: `ami` → আমি). Switch with **⌃Space**.
 3. **Voice** (optional): download **`Bangla-Voice-macOS-*.zip`**, open the app, allow Accessibility → **⌃⌥S** Bangla · **⌃⌥D** English.
 
 More: [`macos/README.md`](macos/README.md).

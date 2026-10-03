@@ -1,0 +1,134 @@
+# typed<TAB>expected   — Bangla Phonetic regression corpus (checked on the real macOS engine)
+# vowels: independent and vowel-sign forms
+ami	আমি
+tumi	তুমি
+onek	অনেক
+omor	অমর
+Igol	ঈগল
+eegol	ঈগল
+ujan	উজান
+oojan	উজান
+Unocollish	ঊনচল্লিশ
+rriju	ঋজু
+emon	এমন
+OIrabot	ঐরাবত
+OtoprOto	ওতপ্রোত
+OUpodeshik	ঔপদেশিক
+iti	ইতি
+kI	কী
+kee	কী
+bujhi	বুঝি
+boojhi	বুঝি
+dUr	দূর
+grriho	গৃহ
+keno	কেন
+kOI	কৈ
+bOU	বৌ
+eki	একি
+ek`i	একই
+# o after a consonant is the inherent vowel; O writes ো
+bhalo	ভাল
+bhalO	ভালো
+korchi	করছি
+cOkh	চোখ
+# sentences
+amar sOnar bangla	আমার সোনার বাংলা
+ami tOmay bhalobasi	আমি তোমায় ভালবাসি
+bhalobashi	ভালবাশি
+kemon achO	কেমন আছো
+desh.	দেশ।
+ki?	কি?
+# reph, folas
+korrmo	কর্ম
+orrko	অর্ক
+arrtonad	আর্তনাদ
+bishwo	বিশ্ব
+bishwas	বিশ্বাস
+udwayI	উদ্বায়ী
+bybohar	ব্যবহার
+byokti	ব্যক্তি
+niyom	নিয়ম
+aZDmin	অ্যাডমিন
+prosonno	প্রসন্ন
+pray	প্রায়
+protidin	প্রতিদিন
+prem	প্রেম
+matro	মাত্র
+podma	পদ্মা
+# automatic conjuncts
+okkhor	অক্ষর
+onto	অন্ত
+biggo	বিজ্ঞ
+brahmoN	ব্রাহ্মণ
+lokkhmI	লক্ষ্মী
+sombol	সম্বল
+glOb	গ্লোব
+golpo	গল্প
+sundor	সুন্দর
+kintu	কিন্তু
+jonmo	জন্ম
+bondhu	বন্ধু
+shikkhok	শিক্ষক
+porIkkha	পরীক্ষা
+okTOpas	অক্টোপাস
+onko	অঙ্ক
+kancon	কাঞ্চন
+kanchon	কাঞ্ছন
+gonj	গঞ্জ
+songge	সঙ্গে
+jonyo	জন্য
+# accent key keeps consonants apart; word-start exceptions for the commonest words
+ag`lanO	আগলানো
+aglanO	আগ্লানো
+am`ra	আমরা
+amra	আমরা
+tOmra	তোমরা
+ekTa	একটা
+ekTu	একটু
+apni	আপনি
+apnar	আপনার
+nomro	নম্র
+# ng: anusvara before a consonant / at the end, ঙ before a vowel
+bangla	বাংলা
+bangladesh	বাংলাদেশ
+sangbadik	সাংবাদিক
+rong	রং
+rongin	রঙিন
+bangali	বাঙালি
+singho	সিংহ
+# y and a after a vowel
+bhai	ভাই
+boi	বই
+bou	বউ
+khao	খাও
+khaoa	খাওয়া
+hawa	হাওয়া
+samia	সামিয়া
+yahoo	ইয়াহু
+hoyeche	হয়েছে
+# others
+ca^d	চাঁদ
+du:kh	দুঃখ
+ut``sob	উৎসব
+krriShok	কৃষক
+gaRi	গাড়ি
+asha	আশা
+aSa	আশা
+aSha	আষা
+bhaSha	ভাষা
+zodi	যদি
+jol	জল
+itihas	ইতিহাস
+sobai	সবাই
+amader	আমাদের
+tOmake	তোমাকে
+dekhechi	দেখেছি
+1234	১২৩৪
+100$	১০০৳
+k,,T	ক্ট
+Dok,,Tor	ডক্টর
+a`	া
+Ami	আমি
+# Shift = the capital letter's meaning (R = ড়); Caps Lock alone is ignored (keyMap 3 = plain)
+AMAR	আমাড়
+AMI	আমী

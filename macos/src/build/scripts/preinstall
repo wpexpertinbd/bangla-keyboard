@@ -4,5 +4,6 @@
 # so they don't need removing here. Never touches other vendors' layouts.
 KL="/Library/Keyboard Layouts"
 rm -f "$KL/Bangla Unicode.keylayout" "$KL/Bangla Unicode.icns" \
-      "$KL/Bangla Classic.keylayout" "$KL/Bangla Classic.icns" 2>/dev/null || true
+      "$KL/Bangla Classic.keylayout" "$KL/Bangla Classic.icns" \
+      "$KL/Bangla Phonetic.keylayout" "$KL/Bangla Phonetic.icns" 2>/dev/null || true
 exit 0
