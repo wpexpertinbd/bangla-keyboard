@@ -62,7 +62,13 @@ def main():
     for typed, _ in corpus:
         for k in range(1, len(typed) + 1):
             cases.add(typed[:k])                      # every prefix = a live-preview state
-    alphabet = sorted({c for typed, _ in corpus for c in typed} | set("`,.:^$0123456789"))
+    # Every letter in BOTH cases (not just the ones the corpus happens to use) so the
+    # "Shift on a case-insensitive letter == lowercase" rule is exercised for all of
+    # them — that path is a keymap[1] miss falling back to keymap[0] in KLEngine.
+    alphabet = sorted({c for typed, _ in corpus for c in typed}
+                      | set("abcdefghijklmnopqrstuvwxyz")
+                      | set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                      | set("`,.:^$0123456789"))
     rnd = random.Random(1234)
     while len(cases) < nrand:
         cases.add("".join(rnd.choice(alphabet) for _ in range(rnd.randint(1, 12))))
