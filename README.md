@@ -15,7 +15,7 @@
 | OS | What it is | Status | Folder |
 |----|-----------|--------|--------|
 | 🍎 **macOS** | Native `.keylayout` (Unicode + Classic + **Phonetic**) + smart installer `.pkg`/`.dmg`; **voice typing** companion app (spoken punctuation) | ✅ **v1.7.0** | [`macos/`](macos/) |
-| 🪟 **Windows** | Tray app (Bangla Unicode + Classic + **Phonetic** + **voice typing**) running the shared engine, + a TSF IME | ✅ **v1.2.0** | [`windows/`](windows/) |
+| 🪟 **Windows** | Tray app (Bangla Unicode + Classic + **Phonetic** + **voice typing**) running the shared engine, + a TSF IME | ✅ **v1.2.1** | [`windows/`](windows/) |
 | 🐧 **Linux** | IBus engine (Bangla Unicode + Classic + **Phonetic** + **voice typing**) running the shared engine | ✅ **v1.2.0** (Debian/Ubuntu + any IBus distro) | [`linux/`](linux/) |
 
 ## Install & use

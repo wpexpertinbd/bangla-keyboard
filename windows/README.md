@@ -1,6 +1,6 @@
 # Bangla Keyboard — Windows port
 
-> **Status: shipping — the tray app is released (`win-v1.2.0`); the TSF IME is experimental.**
+> **Status: shipping — the tray app is released (`win-v1.2.1`); the TSF IME is experimental.**
 > - ✅ **Engine ported to C++** ([`engine/`](engine/)) — **13/13** SPEC §7 corpus
 >   (compiled `enginetest.exe`; `engine/verify.py` is a Python mirror).
 > - ✅ **TSF text service** ([`tsf/`](tsf/)) — builds to `BanglaKeyboard.dll` (x64)

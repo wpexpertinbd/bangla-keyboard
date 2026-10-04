@@ -25,7 +25,7 @@ This reordering is the entire value of the product. A plain static layout (Windo
 | OS | Mechanism | Status |
 |----|-----------|--------|
 | macOS | Static `.keylayout` emulating the engine via chained deadkeys (**+** an optional IMK IME, blocked by Apple notarization) | ✅ shipping (`v1.7.0`) |
-| Windows | **Tray app** with a global low-level keyboard hook running the C++ **KLEngine** (an experimental TSF text service also exists, unshipped) | ✅ shipping (`win-v1.2.0`) |
+| Windows | **Tray app** with a global low-level keyboard hook running the C++ **KLEngine** (an experimental TSF text service also exists, unshipped) | ✅ shipping (`win-v1.2.1`) |
 | Linux | **IBus** engine running the same C++ **KLEngine** | ✅ shipping (`linux-v1.2.0`) |
 
 > A plain static layout (Windows `.klc` / bare XKB) **cannot** do the reph/matra reordering —
