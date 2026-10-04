@@ -25,8 +25,8 @@ across Unicode + Phonetic), plus the shared engine's own corpus on Linux (20/20 
 
 ## Requirements
 ```sh
-# Debian/Ubuntu — keyboard + voice typing:
-sudo apt install build-essential pkg-config libibus-1.0-dev ibus \
+# Debian/Ubuntu — keyboard + voice typing (add `git` too if you'll clone this repo):
+sudo apt install git build-essential pkg-config libibus-1.0-dev ibus \
                  libpulse-dev libcurl4-openssl-dev libnotify-bin
 # Fedora:  sudo dnf install gcc-c++ pkgconf-pkg-config ibus-devel ibus \
 #                           pulseaudio-libs-devel libcurl-devel libnotify
@@ -45,12 +45,29 @@ sudo apt install ./bangla-keyboard-ibus_*.deb   # pulls in ibus if needed
 source (below). Build your own `.deb` with `./build-deb.sh`.
 
 ## Build & install from source (any IBus distro)
+
+**On a fresh machine, start here** — one line that installs everything it needs, clones
+the repo and installs the engine (Debian/Ubuntu; a clean VM usually has neither `git`
+nor a compiler):
 ```sh
-cd linux
-./build.sh              # -> linux/dist/ibus-engine-bangla (+ self-test 20/20, 12/12)
-sudo ./install.sh       # installs the binary + IBus component, system-wide
-ibus restart            # or log out / back in
+sudo apt update && sudo apt install -y git build-essential pkg-config libibus-1.0-dev \
+  ibus libpulse-dev libcurl4-openssl-dev libnotify-bin && \
+cd ~ && git clone https://github.com/wpexpertinbd/bangla-keyboard.git && \
+cd bangla-keyboard/linux && sudo bash install.sh
 ```
+Already have the repo? Just:
+```sh
+cd bangla-keyboard && git pull
+cd linux
+bash build.sh           # -> linux/dist/ibus-engine-bangla (+ self-test 20/20, 12/12, 120/120)
+sudo bash install.sh    # installs the binary + IBus component, system-wide
+```
+Then **log out and back in** (`ibus restart` is enough after a code change, but a NEW
+engine only shows up in the input-source list after a re-login).
+
+> Use `bash install.sh`, not `./install.sh`: a clone made on Windows — or any checkout
+> where the execute bit was lost — gives `Permission denied` otherwise.
+
 Then add it as an input source:
 - **GNOME:** Settings → Keyboard → Input Sources → **+** → **Bangla** →
   *Bangla Unicode* (and/or *Bangla Classic* / *Bangla Phonetic*).

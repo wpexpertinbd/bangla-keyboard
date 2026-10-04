@@ -37,7 +37,7 @@ More: [`macos/README.md`](macos/README.md).
 More: [`windows/README.md`](windows/README.md).
 
 ### 🐧 Linux (Debian / Ubuntu + any IBus distro)
-1. Download **`bangla-keyboard-ibus_*.deb`** (Linux release) from the [releases page](https://github.com/wpexpertinbd/bangla-keyboard/releases): `sudo apt install ./bangla-keyboard-ibus_*.deb`  (other distros: `cd linux && ./build.sh && sudo ./install.sh`).
+1. Download **`bangla-keyboard-ibus_*.deb`** (Linux release) from the [releases page](https://github.com/wpexpertinbd/bangla-keyboard/releases): `sudo apt install ./bangla-keyboard-ibus_*.deb`  (other distros, or building from source on a fresh machine: [`linux/README.md`](linux/README.md) has a single line that installs the tools, clones and builds).
 2. Log out/in, then **Settings → Keyboard → Input Sources → `+` → Bangla → Bangla (Unicode)** (and/or **Classic** / **Phonetic**). Switch with **Super+Space**.
 3. **Voice**: **Ctrl+Alt+S** Bangla · **Ctrl+Alt+D** English.
 
