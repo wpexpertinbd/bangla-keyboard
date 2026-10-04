@@ -47,6 +47,8 @@ enum Mode { MODE_ENGLISH = 0, MODE_UNICODE = 1, MODE_CLASSIC = 2, MODE_PHONETIC 
 static HINSTANCE       g_hInst;
 static HWND            g_hWnd;
 static HHOOK           g_hook;
+static HHOOK           g_mouseHook;   // clicks move the caret -> drop the run
+static HWND            g_lastWnd;     // window the current run belongs to
 static KLEngine        g_uni(&bangla::unicode_table::TABLE);  // Unicode (keylayout-driven)
 static KLEngine        g_classic(&bangla::classic_table::TABLE); // Classic
 static KLEngine        g_phon(&bangla::phonetic_table::TABLE);   // Phonetic (type by sound)
@@ -122,23 +124,27 @@ static void voicePost(UINT msg) {
 static void quitVoice() { HWND v = voiceWnd(); if (v) PostMessageW(v, WM_VOICE_QUIT, 0, 0); }
 
 // ---- key injection ---------------------------------------------------------
-static void sendBackspaces(int n) {
-    if (n <= 0) return;
+// Both return FALSE if the OS refused (or only partly accepted) the injection —
+// typically UIPI, when the focused window runs at a higher integrity level than we
+// do. The caller MUST then drop its picture of the screen: back-spacing later
+// against characters that were never inserted would eat the user's real text.
+static bool sendBackspaces(int n) {
+    if (n <= 0) return true;
     std::vector<INPUT> in; in.reserve(n * 2);
     for (int i = 0; i < n; ++i) {
         INPUT d = {}; d.type = INPUT_KEYBOARD; d.ki.wVk = VK_BACK; in.push_back(d);
         INPUT u = {}; u.type = INPUT_KEYBOARD; u.ki.wVk = VK_BACK; u.ki.dwFlags = KEYEVENTF_KEYUP; in.push_back(u);
     }
-    SendInput((UINT)in.size(), in.data(), sizeof(INPUT));
+    return SendInput((UINT)in.size(), in.data(), sizeof(INPUT)) == in.size();
 }
-static void sendUnicode(const Str& s) {
-    if (s.empty()) return;
+static bool sendUnicode(const Str& s) {
+    if (s.empty()) return true;
     std::vector<INPUT> in; in.reserve(s.size() * 2);
     for (char16_t c : s) {
         INPUT d = {}; d.type = INPUT_KEYBOARD; d.ki.wScan = c; d.ki.dwFlags = KEYEVENTF_UNICODE; in.push_back(d);
         INPUT u = {}; u.type = INPUT_KEYBOARD; u.ki.wScan = c; u.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP; in.push_back(u);
     }
-    SendInput((UINT)in.size(), in.data(), sizeof(INPUT));
+    return SendInput((UINT)in.size(), in.data(), sizeof(INPUT)) == in.size();
 }
 
 static KLEngine* currentEngine() {
@@ -153,6 +159,12 @@ static void flushCurrent();
 // appears immediately; we back-space only the part of the preview that actually
 // changed (e.g. ে -> কে when a prebase vowel reorders).
 static void applyKey(KLEngine* eng, unsigned scan, bool shift) {
+    // Typing somewhere else than where this run started? Its back-spaces would land
+    // at the wrong caret. Checking the foreground window on each key is cheap and —
+    // unlike listening for focus EVENTS — can't be fooled by an app that emits focus
+    // notifications while you type, which would otherwise break vowel reordering.
+    HWND fg = GetForegroundWindow();
+    if (fg != g_lastWnd) { flushCurrent(); g_lastWnd = fg; }
     // Cap the in-progress run so a very long burst / stuck auto-repeat can't grow
     // the buffers unbounded (it just commits and starts fresh — no real word is
     // this long, and word boundaries normally flush far sooner).
@@ -161,8 +173,14 @@ static void applyKey(KLEngine* eng, unsigned scan, bool shift) {
     Str preview = g_committed + eng->peek();
     size_t i = 0;
     while (i < g_shown.size() && i < preview.size() && g_shown[i] == preview[i]) ++i;
-    sendBackspaces((int)(g_shown.size() - i));
-    sendUnicode(preview.substr(i));
+    // If the OS refused the injection (UIPI: the focused window is more privileged
+    // than us), nothing we think is on screen is actually there. Drop the run rather
+    // than carrying a false g_shown into the next key, whose back-spaces would then
+    // delete the user's own characters. Typing simply doesn't work in that window.
+    if (!sendBackspaces((int)(g_shown.size() - i)) || !sendUnicode(preview.substr(i))) {
+        flushCurrent();
+        return;
+    }
     g_shown = preview;
 }
 
@@ -172,6 +190,29 @@ static void flushCurrent() {
     if (g_mode != MODE_ENGLISH) currentEngine()->reset();
     g_committed.clear();
     g_shown.clear();
+}
+
+// ---- caret / focus changes --------------------------------------------------
+// The live preview back-spaces to rewrite the syllable in progress, which is only
+// safe while the caret stays where we left it. A mouse click can move it ANYWHERE —
+// including inside the SAME control, which no window/focus check would catch — and
+// the keyboard hook never sees it. Without this, typing `ক`, clicking elsewhere and
+// typing again would back-space at the NEW caret and delete someone else's character.
+// (Switching windows is handled separately, by the foreground check in applyKey.)
+//
+// Dropping the run costs nothing: the pending deadkey has already been shown by the
+// preview, so flushCurrent() only resets our tracking — it injects nothing.
+static LRESULT CALLBACK mouseProc(int code, WPARAM wParam, LPARAM lParam) {
+    if (code == HC_ACTION) {
+        switch (wParam) {                 // any button press can reposition the caret
+            case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: case WM_MBUTTONDOWN:
+            case WM_NCLBUTTONDOWN: case WM_NCRBUTTONDOWN:
+                try { flushCurrent(); } catch (...) { g_committed.clear(); g_shown.clear(); }
+                break;
+            default: break;               // moves/wheel: leave the run alone
+        }
+    }
+    return CallNextHookEx(g_mouseHook, code, wParam, lParam);
 }
 
 // ---- the global keyboard hook ----------------------------------------------
@@ -459,6 +500,9 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     Shell_NotifyIconW(NIM_ADD, &g_nid);
 
     g_hook = SetWindowsHookExW(WH_KEYBOARD_LL, hookProc, hInst, 0);
+    // Caret-safety hook (see mouseProc). Best-effort: if it fails to install, typing
+    // still works — only the stale-caret guard is weaker, exactly as it was before.
+    g_mouseHook = SetWindowsHookExW(WH_MOUSE_LL, mouseProc, hInst, 0);
     // Another app may already own one of these chords; RegisterHotKey then fails and the
     // shortcut would silently do nothing while the menu/About still advertise it. Say so
     // once instead — the tray menu and icon click still switch modes either way.
@@ -489,6 +533,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     quitVoice();   // close the voice companion when the tray exits
 
     if (g_hook) UnhookWindowsHookEx(g_hook);
+    if (g_mouseHook) UnhookWindowsHookEx(g_mouseHook);
     UnregisterHotKey(g_hWnd, HOTKEY_UNICODE);
     UnregisterHotKey(g_hWnd, HOTKEY_CLASSIC);
     if (g_icoUni) DestroyIcon(g_icoUni);
