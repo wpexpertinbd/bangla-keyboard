@@ -5,16 +5,28 @@ A free Bangla keyboard. It runs in the system tray (down by the clock) and lets
 you type Bangla in ANY app, switching from the tray or with a shortcut.
 
 SWITCHING
-  Ctrl + Alt + V     Bangla Unicode   (press again -> English)
-  Ctrl + Alt + B     Bangla Classic   (press again -> English)
+  Ctrl + Alt + V     Bangla Unicode    (press again -> English)
+  Ctrl + Alt + B     Bangla Classic    (press again -> English)
+  Ctrl + Alt + P     Bangla Phonetic   (press again -> English)
   Or left-click the tray icon, or right-click it for the menu.
 
-  The tray icon shows the mode:  green অ = Unicode,  red ক = Classic,  E = English.
+  The tray icon shows the mode:  অ = Unicode,  ক = Classic,  প = Phonetic (teal),
+  E = English.
 
 TYPING
-  Fixed Windows-style layout: type a prebase vowel BEFORE its consonant and it
-  reorders correctly (ে + ক -> কে). Independent vowels: f -> া, Shift+f -> অ,
-  Shift+f then f -> আ.
+  Fixed Windows-style layout (Bangla Unicode / Bangla Classic): type a prebase vowel
+  BEFORE its consonant and it reorders correctly (ে + ক -> কে). Independent vowels:
+  f -> া, Shift+f -> অ, Shift+f then f -> আ.
+
+  - Bangla Phonetic: type Bangla the way it SOUNDS, and Bangla appears as you type —
+    ami -> আমি,  bhalO -> ভালো,  bangla -> বাংলা,  korrmo -> কর্ম.
+    CAPITALS MATTER for some letters (t/T, d/D, n/N, r/R, s/S, o/O, i/I, u/U, j/J,
+    y/Y, z/Z, G); Shift on any other letter is the same as lowercase, and Caps Lock
+    on its own is harmless (it stays plain lowercase).
+    Other keys:  ` joins two consonants (jan`te -> জানতে),  ,, -> হসন্ত,  . -> ।,
+    : -> ঃ,  digits -> ০-৯,  $ -> ৳,  ^ -> ঁ.
+    A keyboard layout can't have a dictionary, so very common words are built in as
+    exceptions (amra -> আমরা, ekTa -> একটা, apni -> আপনি).
 
   - Bangla Unicode works with any Bangla font — Windows has them built in, and the
     installer can add 14 popular free fonts (SolaimanLipi, Kalpurush, Siyam Rupali, …).

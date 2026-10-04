@@ -4,7 +4,7 @@
 # Needs: dpkg-deb (dpkg-dev) + the build deps (see build.sh).
 set -euo pipefail
 cd "$(dirname "$0")"
-VER="${1:-1.1.1}"
+VER="${1:-1.2.0}"
 ARCH="$(dpkg --print-architecture 2>/dev/null || echo amd64)"
 
 ./build.sh                                    # -> dist/ibus-engine-bangla (+ self-test)
@@ -19,15 +19,16 @@ ROOT="$TMP/bangla-keyboard-ibus_${VER}_${ARCH}"
 install -Dm755 "$BIN_BUILT"                    "$ROOT/usr/lib/ibus/ibus-engine-bangla"
 install -Dm644 "$SRC_ICONS/bangla-unicode.png" "$ROOT/usr/share/ibus/icons/bangla-unicode.png"
 install -Dm644 "$SRC_ICONS/bangla-classic.png" "$ROOT/usr/share/ibus/icons/bangla-classic.png"
+install -Dm644 "$SRC_ICONS/bangla-phonetic.png" "$ROOT/usr/share/ibus/icons/bangla-phonetic.png"
 
 install -d "$ROOT/usr/share/ibus/component"
 cat > "$ROOT/usr/share/ibus/component/bangla.xml" <<'XML'
 <?xml version="1.0" encoding="utf-8"?>
 <component>
   <name>org.freedesktop.IBus.Bangla</name>
-  <description>Bangla Keyboard (Unicode + Classic)</description>
+  <description>Bangla Keyboard (Unicode + Classic + Phonetic)</description>
   <exec>/usr/lib/ibus/ibus-engine-bangla --ibus</exec>
-  <version>1.1.1</version>
+  <version>1.2.0</version>
   <author>BiswasHost</author>
   <license>MIT</license>
   <homepage>https://github.com/wpexpertinbd/bangla-keyboard</homepage>
@@ -47,6 +48,14 @@ cat > "$ROOT/usr/share/ibus/component/bangla.xml" <<'XML'
       <longname>Classic</longname>
       <description>Bangla (legacy ANSI — needs a legacy ANSI Bangla font)</description>
       <icon>/usr/share/ibus/icons/bangla-classic.png</icon>
+      <rank>0</rank>
+    </engine>
+    <engine>
+      <name>bangla-phonetic</name>
+      <language>bn</language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
+      <longname>Phonetic</longname>
+      <description>Bangla (Phonetic) — type Bangla by sound (ami → আমি)</description>
+      <icon>/usr/share/ibus/icons/bangla-phonetic.png</icon>
       <rank>0</rank>
     </engine>
   </engines>

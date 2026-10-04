@@ -18,6 +18,7 @@ echo "[2/4] install binary + icons -> $BIN"
 install -Dm755 dist/ibus-engine-bangla "$BIN"
 install -Dm644 icons/bangla-unicode.png /usr/share/ibus/icons/bangla-unicode.png
 install -Dm644 icons/bangla-classic.png /usr/share/ibus/icons/bangla-classic.png
+install -Dm644 icons/bangla-phonetic.png /usr/share/ibus/icons/bangla-phonetic.png
 
 echo "[3/4] install component -> $XML"
 install -d "$(dirname "$XML")"
@@ -25,9 +26,9 @@ cat > "$XML" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <component>
   <name>org.freedesktop.IBus.Bangla</name>
-  <description>Bangla Keyboard (Unicode + Classic)</description>
+  <description>Bangla Keyboard (Unicode + Classic + Phonetic)</description>
   <exec>$BIN --ibus</exec>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
   <author>BiswasHost</author>
   <license>MIT</license>
   <homepage>https://github.com/wpexpertinbd/bangla-keyboard</homepage>
@@ -49,6 +50,14 @@ cat > "$XML" <<EOF
       <icon>/usr/share/ibus/icons/bangla-classic.png</icon>
       <rank>0</rank>
     </engine>
+    <engine>
+      <name>bangla-phonetic</name>
+      <language>bn</language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
+      <longname>Phonetic</longname>
+      <description>Bangla (Phonetic) — type Bangla by sound (ami → আমি)</description>
+      <icon>/usr/share/ibus/icons/bangla-phonetic.png</icon>
+      <rank>0</rank>
+    </engine>
   </engines>
 </component>
 EOF
@@ -61,9 +70,10 @@ cat <<'MSG'
 Installed. To finish:
   1) ibus restart                (or log out/in)
   2) Add the input source: GNOME Settings -> Keyboard -> Input Sources -> +
-     -> Bangla -> "Bangla Unicode" (and/or "Bangla Classic").
+     -> Bangla -> "Bangla Unicode" (and/or "Bangla Classic" / "Bangla Phonetic").
   3) Switch with Super+Space and type on a US-QWERTY layout.
 
+Bangla Phonetic types Bangla by sound: ami -> আমি, bhalO -> ভালো, bangla -> বাংলা.
 Bangla Classic renders only in a legacy ANSI ("MJ"-style) Bangla font — install
 one from your own legitimate source and select it in your app.
 MSG

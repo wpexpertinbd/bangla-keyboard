@@ -121,6 +121,8 @@ def main():
         os.path.join(here, 'unicode_table.h'), 'unicode_table', 'Bangla Unicode')
     gen(os.path.join(kld, 'Bangla Classic.keylayout'),
         os.path.join(here, 'classic_table.h'), 'classic_table', 'Bangla Classic')
+    gen(os.path.join(kld, 'Bangla Phonetic.keylayout'),
+        os.path.join(here, 'phonetic_table.h'), 'phonetic_table', 'Bangla Phonetic')
 
 if __name__ == '__main__':
     main()

@@ -25,9 +25,9 @@ cat > dist/bangla.xml <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <component>
   <name>org.freedesktop.IBus.Bangla</name>
-  <description>Bangla Keyboard (Unicode + Classic)</description>
+  <description>Bangla Keyboard (Unicode + Classic + Phonetic)</description>
   <exec>$(pwd)/dist/ibus-engine-bangla --ibus</exec>
-  <version>1.1.1</version>
+  <version>1.2.0</version>
   <author>BiswasHost</author>
   <license>MIT</license>
   <homepage>https://github.com/wpexpertinbd/bangla-keyboard</homepage>
@@ -47,6 +47,14 @@ cat > dist/bangla.xml <<EOF
       <longname>Classic</longname>
       <description>Bangla (legacy ANSI — needs a legacy ANSI Bangla font)</description>
       <icon>$(pwd)/icons/bangla-classic.png</icon>
+      <rank>0</rank>
+    </engine>
+    <engine>
+      <name>bangla-phonetic</name>
+      <language>bn</language><license>MIT</license><author>BiswasHost</author><layout>us</layout>
+      <longname>Phonetic</longname>
+      <description>Bangla (Phonetic) — type Bangla by sound (ami → আমি)</description>
+      <icon>$(pwd)/icons/bangla-phonetic.png</icon>
       <rank>0</rank>
     </engine>
   </engines>

@@ -1,5 +1,6 @@
 // End-to-end test of the installed IBus engine: creates an input context, selects
-// "bangla-unicode", feeds real key events by X11 keycode (= Set-1 scancode + 8),
+// each engine in turn ("bangla-unicode", then "bangla-phonetic"),
+// feeds real key events by X11 keycode (= Set-1 scancode + 8),
 // and checks the committed text. Proves the whole path (keycode->scan->KLEngine->
 // preedit->commit) works, not just that the engine registers.
 //
@@ -64,22 +65,37 @@ int main() {
     g_signal_connect(ctx, "commit-text", G_CALLBACK(on_commit), nullptr);
     ibus_input_context_set_capabilities(ctx, IBUS_CAP_PREEDIT_TEXT | IBUS_CAP_FOCUS);
     ibus_input_context_focus_in(ctx);
-    ibus_input_context_set_engine(ctx, "bangla-unicode");
-    spin(300);
+    struct Case { const char* keys; const char* want; };
 
-    struct { const char* keys; const char* want; } cases[] = {
+    // Fixed layout (Bangla Unicode): reordering + conjuncts through real IBus.
+    static const Case uni[] = {
         {"^f f", "আ"}, {"c j", "কে"}, {"d j", "কি"},
         {"h f ^q ^v f", "বাংলা"}, {"i g d c ^y", "হইছে"},
     };
-    int pass = 0, n = sizeof(cases)/sizeof(cases[0]);
-    for (int i = 0; i < n; i++) {
-        std::string got = play(ctx, cases[i].keys);
-        // trim a trailing space (from the committed run)
-        while (!got.empty() && got.back()==' ') got.pop_back();
-        bool ok = (got == cases[i].want);
-        pass += ok;
-        printf("[%s] %-14s -> %-10s (want %s)\n", ok?"PASS":"FAIL", cases[i].keys, got.c_str(), cases[i].want);
-    }
-    printf("%d/%d\n", pass, n);
-    return pass == n ? 0 : 2;
+    // Bangla Phonetic: type by sound. Also proves the THIRD engine registers and
+    // that case comes from the real Shift key (^o = O in "bhalO").
+    static const Case phon[] = {
+        {"a m i", "আমি"}, {"b a n g l a", "বাংলা"},
+        {"b h a l ^o", "ভালো"}, {"e k ^t a", "একটা"}, {"k o r r m o", "কর্ম"},
+    };
+
+    int pass = 0, total = 0;
+    auto runEngine = [&](const char* engine, const Case* cs, int n) {
+        ibus_input_context_set_engine(ctx, engine);
+        spin(300);
+        printf("== %s ==\n", engine);
+        for (int i = 0; i < n; i++) {
+            std::string got = play(ctx, cs[i].keys);
+            // trim a trailing space (from the committed run)
+            while (!got.empty() && got.back()==' ') got.pop_back();
+            bool ok = (got == cs[i].want);
+            pass += ok; total++;
+            printf("[%s] %-14s -> %-10s (want %s)\n", ok?"PASS":"FAIL", cs[i].keys, got.c_str(), cs[i].want);
+        }
+    };
+    runEngine("bangla-unicode",  uni,  (int)(sizeof(uni)/sizeof(uni[0])));
+    runEngine("bangla-phonetic", phon, (int)(sizeof(phon)/sizeof(phon[0])));
+
+    printf("%d/%d\n", pass, total);
+    return pass == total ? 0 : 2;
 }

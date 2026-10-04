@@ -1,5 +1,18 @@
 # Bangla Phonetic — Windows / Linux port notes
 
+> ## ✅ PORTED — Windows `win-v1.2.0` + Linux `linux-v1.2.0`
+> Done exactly as suggested: `gen_tables.py` now also emits `windows/engine/phonetic_table.h`
+> from `Bangla Phonetic.keylayout` (**119 states**, matching this doc), and the existing
+> `KLEngine` runs it unchanged. **Windows:** a third tray mode (**Ctrl+Alt+P**, প icon).
+> **Linux:** a third IBus engine `bangla-phonetic` (`<longname>Phonetic</longname>`).
+> *Gotcha for anyone adding a 4th engine on Linux:* a new engine must ALSO be passed to
+> `ibus_factory_add_engine()` — declaring it only in the component XML silently falls back
+> to the default table (caught by `linux/test.sh`, which now covers phonetic end-to-end).
+> Shift/Caps was already correct on both (real Shift modifier only, never Caps Lock).
+> **Verification:** `tests.tsv` **123/123**; **4000/4000** differential vs `type_ref` (corpus
+> prefixes + random) via `windows/engine/phonetic_check.py`; the full corpus is now baked
+> into the build-time self-test (`klengine_test` prints `123/123`); Linux e2e **10/10**.
+
 > For the **Windows Claude**. macOS ships **Bangla Phonetic** in `v1.7.0` as a third
 > `.keylayout`: type Bangla the way it sounds (`ami` → আমি, `bhalO` → ভালো, `korrmo` → কর্ম),
 > with Bangla appearing **as you type**. Please bring it to Windows (tray) and Linux (IBus).

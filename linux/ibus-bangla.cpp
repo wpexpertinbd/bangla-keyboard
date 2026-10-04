@@ -2,7 +2,10 @@
 //
 // Reuses the shared C++ KLEngine (../windows/engine) — the SAME keylayout-driven
 // FSM as macOS + Windows, so output is byte-identical (f->া, Shift+f->অ, reph
-// reorders, etc.). Two engines are exposed: "bangla-unicode" and "bangla-classic".
+// reorders, etc.). Three engines are exposed: "bangla-unicode", "bangla-classic" and
+// "bangla-phonetic" (type Bangla by SOUND — ami -> আমি, bhalO -> ভালো). On phonetic,
+// case is significant (t/T, d/D, o/O …) and comes from the real Shift modifier only,
+// so Caps Lock alone keeps the plain map and can't garble a word.
 //
 // IBus mapping (much cleaner than the Windows backspace hack): the in-progress
 // syllable run lives in the PREEDIT (underlined); process() appends, peek() shows
@@ -28,6 +31,7 @@
 #include "klengine.h"
 #include "unicode_table.h"
 #include "classic_table.h"
+#include "phonetic_table.h"
 #include "stt_curl.h"
 
 // Voice-typing state (heap-allocated; GObject gives raw memory so no C++ ctors run).
@@ -89,10 +93,11 @@ static void ensure_engine(IBusBangla* self) {
     if (self->eng) return;
     gchar* name = nullptr;
     g_object_get(self, "engine-name", &name, nullptr);
-    gboolean classic = (name && g_strcmp0(name, "bangla-classic") == 0);
+    const bangla::Table* t = &bangla::unicode_table::TABLE;
+    if (name && g_strcmp0(name, "bangla-classic") == 0)       t = &bangla::classic_table::TABLE;
+    else if (name && g_strcmp0(name, "bangla-phonetic") == 0) t = &bangla::phonetic_table::TABLE;
     g_free(name);
-    self->eng = new bangla::KLEngine(classic ? &bangla::classic_table::TABLE
-                                             : &bangla::unicode_table::TABLE);
+    self->eng = new bangla::KLEngine(t);
 }
 
 static void show_preedit(IBusBangla* self) {
@@ -336,6 +341,7 @@ int main(int argc, char** argv) {
     g_object_ref_sink(factory);
     ibus_factory_add_engine(factory, "bangla-unicode", IBUS_TYPE_BANGLA);
     ibus_factory_add_engine(factory, "bangla-classic", IBUS_TYPE_BANGLA);
+    ibus_factory_add_engine(factory, "bangla-phonetic", IBUS_TYPE_BANGLA);
 
     if (xml) {   // standalone: teach the running daemon about our engines at runtime
         IBusComponent* comp = ibus_component_new_from_file(xml);

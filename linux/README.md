@@ -1,13 +1,15 @@
 # Bangla Keyboard — Linux port (IBus)
 
-> **Status: shipping — `linux-v1.1.1`.** An **IBus engine** that reuses the shared C++ **KLEngine** (the
+> **Status: shipping — `linux-v1.2.0`.** An **IBus engine** that reuses the shared C++ **KLEngine** (the
 > same keylayout-driven FSM as macOS + Windows), so output is **byte-identical**
-> (`f`→া, `Shift+f`→অ, `Shift+f f`→আ, reph reorders, conjuncts). Two engines:
-> **Bangla Unicode** + **Bangla Classic**. Built + tested on **Ubuntu 24.04** (GNOME/
-> IBus); should work on any distro with IBus (Debian, Fedora, Arch, …).
+> (`f`→া, `Shift+f`→অ, `Shift+f f`→আ, reph reorders, conjuncts). Three engines:
+> **Bangla Unicode** + **Bangla Classic** + **Bangla Phonetic** (type by sound). Built +
+> tested on **Ubuntu 24.04** (GNOME/IBus); should work on any distro with IBus (Debian,
+> Fedora, Arch, …).
 
-Verified end-to-end: real key events → IBus → correct Bangla (`linux/test.sh`, 5/5),
-plus the shared engine's own corpus (20/20 Unicode + 12/12 Classic) on Linux.
+Verified end-to-end: real key events → IBus → correct Bangla (`linux/test.sh`, **10/10**
+across Unicode + Phonetic), plus the shared engine's own corpus on Linux (20/20 Unicode +
+12/12 Classic + **123/123 Phonetic**).
 
 ## How it works
 - **One engine, reused.** `ibus-bangla.cpp` is a thin IBus `IBusEngine` subclass; the
@@ -51,16 +53,25 @@ ibus restart            # or log out / back in
 ```
 Then add it as an input source:
 - **GNOME:** Settings → Keyboard → Input Sources → **+** → **Bangla** →
-  *Bangla Unicode* (and/or *Bangla Classic*).
+  *Bangla Unicode* (and/or *Bangla Classic* / *Bangla Phonetic*).
 - Switch inputs with **Super+Space**; type on a US-QWERTY layout.
 
 `./test.sh` runs the end-to-end key→commit test (needs the engine installed).
 `sudo ./uninstall.sh` removes it.
 
 ## Typing
-Fixed Windows-style layout with syllable reordering — type a prebase vowel **before**
-its consonant and it reorders (`ে`+`ক`→`কে`); reph after a consonant reorders
-(`ভার্সন`); independent vowels: `f`→া, `Shift+f`→অ, `Shift+f` then `f`→আ.
+**Bangla Unicode / Classic** are the fixed Windows-style layout with syllable reordering —
+type a prebase vowel **before** its consonant and it reorders (`ে`+`ক`→`কে`); reph after a
+consonant reorders (`ভার্সন`); independent vowels: `f`→া, `Shift+f`→অ, `Shift+f` then `f`→আ.
+
+**Bangla Phonetic** types Bangla the way it **sounds** — `ami`→আমি, `bhalO`→ভালো,
+`bangla`→বাংলা, `korrmo`→কর্ম — and Bangla appears in the preedit as you type. **Case is
+significant** for some letters (`t/T d/D n/N r/R s/S o/O i/I u/U j/J y/Y z/Z G`); Shift on
+any other letter is just lowercase, and **Caps Lock alone stays the plain map**, so an
+accidental Caps Lock can't garble a word. Non-letter keys: `` ` `` joins consonants
+(``jan`te``→জানতে), `,,`→হসন্ত, `.`→।, `:`→ঃ, digits→০-৯, `$`→৳, `^`→ঁ. A static layout can't
+have a dictionary, so common words are built-in exceptions (`amra` আমরা, `ekTa` একটা,
+`apni` আপনি).
 
 **Bangla Classic** outputs the legacy ASCII (non-Unicode) encoding of legacy ANSI
 ("MJ"-style) Bangla fonts. Those fonts are proprietary and **not** included — install a

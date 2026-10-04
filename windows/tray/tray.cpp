@@ -12,10 +12,15 @@
 //                     the macOS Classic layout. Visual order, so injection is
 //                     append-only (robust). Renders as Bangla only in a legacy
 //                     ANSI Bangla font (the one used for old documents).
+//   Bangla Phonetic — type Bangla the way it SOUNDS (ami -> আমি, bhalO -> ভালো),
+//                     driven by the same keylayout FSM (../engine/phonetic_table.h)
+//                     generated from the macOS "Bangla Phonetic.keylayout". Case is
+//                     significant (t/T, d/D, o/O …) and comes from the real Shift key
+//                     only — Caps Lock alone must stay the plain map.
 //   English         — passthrough.
 //
-// Switch with the tray menu, a left-click on the icon, or Ctrl+Alt+B (toggles
-// English <-> the last Bangla mode).
+// Switch with the tray menu, a left-click on the icon, or Ctrl+Alt+V / Ctrl+Alt+B /
+// Ctrl+Alt+P (each toggles its layout <-> English).
 //
 // Build: g++ -std=c++17 -O2 -static -mwindows -municode -finput-charset=UTF-8 \
 //        tray.cpp ../engine/engine.cpp ../engine/classic.cpp -o ../dist/bangla-tray.exe \
@@ -27,6 +32,7 @@
 #include "../engine/klengine.h"
 #include "../engine/unicode_table.h"
 #include "../engine/classic_table.h"
+#include "../engine/phonetic_table.h"
 
 #ifndef LOAD_LIBRARY_SEARCH_SYSTEM32
 #define LOAD_LIBRARY_SEARCH_SYSTEM32 0x00000800
@@ -35,7 +41,7 @@
 using bangla::KLEngine;
 using Str = std::u16string;
 
-enum Mode { MODE_ENGLISH = 0, MODE_UNICODE = 1, MODE_CLASSIC = 2 };
+enum Mode { MODE_ENGLISH = 0, MODE_UNICODE = 1, MODE_CLASSIC = 2, MODE_PHONETIC = 3 };
 
 // ---- state -----------------------------------------------------------------
 static HINSTANCE       g_hInst;
@@ -43,6 +49,7 @@ static HWND            g_hWnd;
 static HHOOK           g_hook;
 static KLEngine        g_uni(&bangla::unicode_table::TABLE);  // Unicode (keylayout-driven)
 static KLEngine        g_classic(&bangla::classic_table::TABLE); // Classic
+static KLEngine        g_phon(&bangla::phonetic_table::TABLE);   // Phonetic (type by sound)
 static Str             g_committed;        // finalised text of the current run
 static Str             g_shown;            // what's on screen now (committed + live preview)
 static Mode            g_mode = MODE_ENGLISH;
@@ -52,9 +59,11 @@ static NOTIFYICONDATAW g_nid    = {};
 static HICON           g_icoUni = nullptr; // অ on flag-red circle
 static HICON           g_icoCls = nullptr; // ক on brick-red circle
 static HICON           g_icoEn  = nullptr; // E on grey circle
+static HICON           g_icoPhon = nullptr; // প on teal circle
 static HBITMAP         g_bmpUni = nullptr; // 16x16 versions for the popup menu
 static HBITMAP         g_bmpCls = nullptr;
 static HBITMAP         g_bmpEn  = nullptr;
+static HBITMAP         g_bmpPhon = nullptr;
 static HBITMAP         g_bmpVoiceBn = nullptr; // green mic (Bangla Voice)
 static HBITMAP         g_bmpVoiceEn = nullptr; // blue mic  (English Voice)
 
@@ -65,10 +74,12 @@ static HBITMAP         g_bmpVoiceEn = nullptr; // blue mic  (English Voice)
 #define ID_VOICE_BN     1004   // Bangla voice  (-> bangla-voice.exe)
 #define ID_VOICE_EN     1005   // English voice
 #define ID_VOICE_TOGGLE 1006   // enable/disable the voice companion
+#define ID_PHONETIC     1007   // Bangla Phonetic (type by sound)
 #define ID_ABOUT        1010
 #define ID_EXIT         1011
-#define HOTKEY_UNICODE 1   // Ctrl+Alt+V toggles Bangla Unicode <-> English
-#define HOTKEY_CLASSIC 2   // Ctrl+Alt+B toggles Bangla Classic <-> English
+#define HOTKEY_UNICODE 1   // Ctrl+Alt+V toggles Bangla Unicode  <-> English
+#define HOTKEY_CLASSIC 2   // Ctrl+Alt+B toggles Bangla Classic  <-> English
+#define HOTKEY_PHONETIC 3  // Ctrl+Alt+P toggles Bangla Phonetic <-> English
 
 // messages posted to the bangla-voice.exe window ("BanglaVoice"); see voicehost.cpp
 #define WM_VOICE_BN   (WM_APP + 1)
@@ -130,7 +141,11 @@ static void sendUnicode(const Str& s) {
     SendInput((UINT)in.size(), in.data(), sizeof(INPUT));
 }
 
-static KLEngine* currentEngine() { return g_mode == MODE_CLASSIC ? &g_classic : &g_uni; }
+static KLEngine* currentEngine() {
+    return g_mode == MODE_CLASSIC  ? &g_classic
+         : g_mode == MODE_PHONETIC ? &g_phon
+                                   : &g_uni;
+}
 static void flushCurrent();
 
 // Inject one handled key. The deadkey FSM defers, so we show a LIVE PREVIEW =
@@ -286,14 +301,18 @@ static HBITMAP makeMicBitmap(COLORREF bg) {
 
 static const wchar_t* modeTip() {
     switch (g_mode) {
-        case MODE_UNICODE: return L"Bangla Keyboard — Bangla Unicode  (Ctrl+Alt+V toggles)";
-        case MODE_CLASSIC: return L"Bangla Keyboard — Bangla Classic  (Ctrl+Alt+B toggles)";
-        default:           return L"Bangla Keyboard — English  (Ctrl+Alt+V = Unicode, Ctrl+Alt+B = Classic)";
+        case MODE_UNICODE:  return L"Bangla Keyboard — Bangla Unicode  (Ctrl+Alt+V toggles)";
+        case MODE_CLASSIC:  return L"Bangla Keyboard — Bangla Classic  (Ctrl+Alt+B toggles)";
+        case MODE_PHONETIC: return L"Bangla Keyboard — Bangla Phonetic  (Ctrl+Alt+P toggles)";
+        default:            return L"Bangla Keyboard — English  (Ctrl+Alt+V Unicode, Ctrl+Alt+B Classic, Ctrl+Alt+P Phonetic)";
     }
 }
 
 static void updateTray() {
-    g_nid.hIcon = (g_mode == MODE_UNICODE) ? g_icoUni : (g_mode == MODE_CLASSIC) ? g_icoCls : g_icoEn;
+    g_nid.hIcon = (g_mode == MODE_UNICODE)  ? g_icoUni
+                : (g_mode == MODE_CLASSIC)  ? g_icoCls
+                : (g_mode == MODE_PHONETIC) ? g_icoPhon
+                                            : g_icoEn;
     lstrcpynW(g_nid.szTip, modeTip(), ARRAYSIZE(g_nid.szTip));
     Shell_NotifyIconW(NIM_MODIFY, &g_nid);
 }
@@ -309,9 +328,9 @@ static void balloon(const wchar_t* title, const wchar_t* text) {
 static void setMode(Mode m) {
     if (g_mode == m) return;
     flushCurrent();                 // finalise anything pending in the old mode
-    g_uni.reset(); g_classic.reset();
+    g_uni.reset(); g_classic.reset(); g_phon.reset();
     g_mode = m;
-    if (m == MODE_UNICODE || m == MODE_CLASSIC) g_lastBangla = m;
+    if (m == MODE_UNICODE || m == MODE_CLASSIC || m == MODE_PHONETIC) g_lastBangla = m;
     updateTray();
     if (m == MODE_CLASSIC && !g_classicHintShown) {
         g_classicHintShown = true;
@@ -326,6 +345,7 @@ static void showMenu() {
     HMENU m = CreatePopupMenu();
     AppendMenuW(m, MF_STRING | (g_mode == MODE_UNICODE ? MF_CHECKED : 0), ID_UNICODE, L"Bangla Unicode");
     AppendMenuW(m, MF_STRING | (g_mode == MODE_CLASSIC ? MF_CHECKED : 0), ID_CLASSIC, L"Bangla Classic");
+    AppendMenuW(m, MF_STRING | (g_mode == MODE_PHONETIC ? MF_CHECKED : 0), ID_PHONETIC, L"Bangla Phonetic");
     AppendMenuW(m, MF_STRING | (g_mode == MODE_ENGLISH ? MF_CHECKED : 0), ID_ENGLISH, L"English");
     // colored flag icon before each mode name (like the tray icon)
     auto setBmp = [&](UINT id, HBITMAP b) {
@@ -334,6 +354,7 @@ static void showMenu() {
     };
     setBmp(ID_UNICODE, g_bmpUni);
     setBmp(ID_CLASSIC, g_bmpCls);
+    setBmp(ID_PHONETIC, g_bmpPhon);
     setBmp(ID_ENGLISH, g_bmpEn);
     if (g_voiceEnabled) {
         AppendMenuW(m, MF_SEPARATOR, 0, nullptr);
@@ -360,6 +381,7 @@ static LRESULT CALLBACK wndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
             switch (LOWORD(wp)) {
                 case ID_UNICODE: setMode(MODE_UNICODE); break;
                 case ID_CLASSIC: setMode(MODE_CLASSIC); break;
+                case ID_PHONETIC: setMode(MODE_PHONETIC); break;
                 case ID_ENGLISH: setMode(MODE_ENGLISH); break;
                 case ID_VOICE_BN: voicePost(WM_VOICE_BN); break;
                 case ID_VOICE_EN: voicePost(WM_VOICE_EN); break;
@@ -368,10 +390,12 @@ static LRESULT CALLBACK wndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
                         L"Bangla Keyboard — tray switcher\n\n"
                         L"Bangla Unicode = standard Unicode Bangla (any Bangla font).\n"
                         L"Bangla Classic = legacy ANSI Bangla encoding (needs a legacy ANSI Bangla font).\n"
+                        L"Bangla Phonetic = type Bangla by sound (ami -> আমি, bhalO -> ভালো).\n"
                         L"English = normal typing.\n\n"
                         L"Switch: this menu, click the tray icon, or shortcuts —\n"
                         L"  Ctrl+Alt+V = Bangla Unicode (press again = English)\n"
-                        L"  Ctrl+Alt+B = Bangla Classic (press again = English)\n\n"
+                        L"  Ctrl+Alt+B = Bangla Classic (press again = English)\n"
+                        L"  Ctrl+Alt+P = Bangla Phonetic (press again = English)\n\n"
                         L"Voice typing (needs internet):\n"
                         L"  Ctrl+Alt+S = Bangla voice,  Ctrl+Alt+D = English voice\n\n"
                         L"All English shortcuts (Ctrl+C/V/A/S, etc.) work normally.\n"
@@ -386,6 +410,7 @@ static LRESULT CALLBACK wndProc(HWND h, UINT msg, WPARAM wp, LPARAM lp) {
             // each shortcut enables its layout, or disables it (back to English).
             if      (wp == HOTKEY_UNICODE) setMode(g_mode == MODE_UNICODE ? MODE_ENGLISH : MODE_UNICODE);
             else if (wp == HOTKEY_CLASSIC) setMode(g_mode == MODE_CLASSIC ? MODE_ENGLISH : MODE_CLASSIC);
+            else if (wp == HOTKEY_PHONETIC) setMode(g_mode == MODE_PHONETIC ? MODE_ENGLISH : MODE_PHONETIC);
             return 0;
         case WM_DESTROY:
             Shell_NotifyIconW(NIM_DELETE, &g_nid);
@@ -416,9 +441,11 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     g_icoUni = makeIcon(L"অ", RGB(244, 42, 65), white);   // red circle, white অ
     g_icoCls = makeIcon(L"ক", RGB(192, 57, 43), white);   // brick circle, white ক
     g_icoEn  = makeIcon(L"E", white, black);              // white circle, black E
+    g_icoPhon = makeIcon(L"প", RGB(13, 148, 136), white); // teal circle, white প
     g_bmpUni = makeMenuBitmap(L"অ", RGB(244, 42, 65), white);
     g_bmpCls = makeMenuBitmap(L"ক", RGB(192, 57, 43), white);
     g_bmpEn  = makeMenuBitmap(L"E", white, black);
+    g_bmpPhon = makeMenuBitmap(L"প", RGB(13, 148, 136), white);
     g_bmpVoiceBn = makeMicBitmap(RGB(34, 160, 90));   // green mic
     g_bmpVoiceEn = makeMicBitmap(RGB(37, 99, 235));   // blue mic
 
@@ -434,6 +461,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     g_hook = SetWindowsHookExW(WH_KEYBOARD_LL, hookProc, hInst, 0);
     RegisterHotKey(g_hWnd, HOTKEY_UNICODE, MOD_CONTROL | MOD_ALT, 'V'); // Bangla Unicode
     RegisterHotKey(g_hWnd, HOTKEY_CLASSIC, MOD_CONTROL | MOD_ALT, 'B'); // Bangla Classic
+    RegisterHotKey(g_hWnd, HOTKEY_PHONETIC, MOD_CONTROL | MOD_ALT, 'P'); // Bangla Phonetic
 
     g_voiceEnabled = readVoiceEnabled();      // start the voice companion if opted in
     if (g_voiceEnabled) launchVoice();
