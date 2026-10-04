@@ -28,13 +28,21 @@ def load_ref():
 
 
 def run_driver(driver, cases):
-    """Feed one typed case per line; get one output line back."""
+    """Feed one typed case per line; get exactly one output line back per case."""
     p = subprocess.run([driver], input="\n".join(cases) + "\n",
                        capture_output=True, encoding="utf-8")
     if p.returncode != 0:
         sys.exit("driver failed (%d): %s" % (p.returncode, p.stderr[:400]))
     out = p.stdout.split("\n")
-    return out[:len(cases)]
+    if out and out[-1] == "":
+        out.pop()                      # trailing newline, not a case
+    # Cardinality MUST match: a short reply would otherwise be silently truncated by
+    # zip() below, so a driver that answered only the first few cases would still be
+    # reported as a full pass.
+    if len(out) != len(cases):
+        sys.exit("driver returned %d lines for %d cases — refusing to compare"
+                 % (len(out), len(cases)))
+    return out
 
 
 def main():
@@ -52,9 +60,9 @@ def main():
 
     # ---- 1. shipped corpus -------------------------------------------------
     got = run_driver(driver, [t for t, _ in corpus])
-    bad = [(t, e, g) for (t, e), g in zip(corpus, got) if NFC(g) != NFC(e)]
-    print("corpus : %d/%d" % (len(corpus) - len(bad), len(corpus)))
-    for t, e, g in bad[:15]:
+    bad_corpus = [(t, e, g) for (t, e), g in zip(corpus, got) if NFC(g) != NFC(e)]
+    print("corpus : %d/%d" % (len(corpus) - len(bad_corpus), len(corpus)))
+    for t, e, g in bad_corpus[:15]:
         print("   MISMATCH %-16s expected %-22s got %s" % (t, e, g))
 
     # ---- 2. differential vs the reference model ----------------------------
@@ -75,13 +83,17 @@ def main():
     cases = sorted(cases)
 
     got = run_driver(driver, cases)
-    bad = [(c, ref.type_ref(c), g) for c, g in zip(cases, got) if NFC(g) != NFC(ref.type_ref(c))]
+    bad_diff = [(c, ref.type_ref(c), g) for c, g in zip(cases, got)
+                if NFC(g) != NFC(ref.type_ref(c))]
     print("diff   : %d/%d  (corpus prefixes + random, vs gen_phonetic.type_ref)"
-          % (len(cases) - len(bad), len(cases)))
-    for c, e, g in bad[:15]:
+          % (len(cases) - len(bad_diff), len(cases)))
+    for c, e, g in bad_diff[:15]:
         print("   MISMATCH %-16s ref %-22s got %s" % (c, e, g))
 
-    sys.exit(1 if bad else 0)
+    # BOTH phases gate the exit code (a corpus failure must not be masked by a clean
+    # differential run — they are different questions: "matches the shipped corpus"
+    # vs "matches the reference model").
+    sys.exit(1 if (bad_corpus or bad_diff) else 0)
 
 
 if __name__ == "__main__":

@@ -228,11 +228,17 @@ static void voice_run(IBusBangla* self, int mode) {
 }
 
 static void voice_stop(IBusBangla* self) {
-    if (!self->voice || self->voice->mode.load() == 0) return;
+    if (!self->voice) return;
+    bool wasOn = self->voice->mode.load() != 0;
     self->voice->stop.store(true);
+    // Join whenever the thread OBJECT is joinable — not only when mode != 0. A worker
+    // that bailed out early (e.g. "microphone unavailable") zeroes `mode` itself but
+    // leaves the std::thread joinable; returning early here would then move-assign a
+    // new thread over a joinable one, which calls std::terminate() and kills the whole
+    // IBus engine process (typing dies, not just voice). Same for finalize().
     if (self->voice->th.joinable()) self->voice->th.join();
     self->voice->mode.store(0);
-    voice_notify("Voice off");
+    if (wasOn) voice_notify("Voice off");     // no toast if nothing was running
 }
 static void voice_toggle(IBusBangla* self, int mode) {
     if (self->voice->mode.load() == mode) { voice_stop(self); return; }

@@ -459,9 +459,24 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR, int) {
     Shell_NotifyIconW(NIM_ADD, &g_nid);
 
     g_hook = SetWindowsHookExW(WH_KEYBOARD_LL, hookProc, hInst, 0);
-    RegisterHotKey(g_hWnd, HOTKEY_UNICODE, MOD_CONTROL | MOD_ALT, 'V'); // Bangla Unicode
-    RegisterHotKey(g_hWnd, HOTKEY_CLASSIC, MOD_CONTROL | MOD_ALT, 'B'); // Bangla Classic
-    RegisterHotKey(g_hWnd, HOTKEY_PHONETIC, MOD_CONTROL | MOD_ALT, 'P'); // Bangla Phonetic
+    // Another app may already own one of these chords; RegisterHotKey then fails and the
+    // shortcut would silently do nothing while the menu/About still advertise it. Say so
+    // once instead — the tray menu and icon click still switch modes either way.
+    struct { int id; UINT vk; const wchar_t* name; } hk[] = {
+        { HOTKEY_UNICODE,  'V', L"Ctrl+Alt+V (Bangla Unicode)"  },
+        { HOTKEY_CLASSIC,  'B', L"Ctrl+Alt+B (Bangla Classic)"  },
+        { HOTKEY_PHONETIC, 'P', L"Ctrl+Alt+P (Bangla Phonetic)" },
+    };
+    std::wstring taken;
+    for (auto& k : hk)
+        if (!RegisterHotKey(g_hWnd, k.id, MOD_CONTROL | MOD_ALT, k.vk)) {
+            if (!taken.empty()) taken += L"\n";
+            taken += k.name;
+        }
+    if (!taken.empty())
+        balloon(L"Shortcut already in use",
+                (L"Another app has taken:\n" + taken +
+                 L"\nSwitch from the tray icon/menu instead.").c_str());
 
     g_voiceEnabled = readVoiceEnabled();      // start the voice companion if opted in
     if (g_voiceEnabled) launchVoice();

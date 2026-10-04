@@ -34,12 +34,21 @@ def spec_of(typed):
         else:                             toks.append(ch)
     return ' '.join(toks)
 
+# NOTE: entries containing a key the LAYOUT doesn't own (Space) are skipped here.
+# The spec notation uses space as its token separator, and more importantly "Space"
+# is not a layout key at all: the SHELL flushes the engine and passes the character
+# through. This harness only drives KLEngine, so it cannot model that — baking such a
+# case in would assert a space-less string and pass vacuously. Those sentence cases
+# ARE covered, with the real pass-through behaviour, by phonetic_check.py (which
+# compares the full 123-case corpus against the shipped tests.tsv expectations).
 PHON = []
 for line in open(os.path.join(here, '..', '..', 'macos', 'src', 'phonetic', 'tests.tsv'),
                  encoding='utf-8'):
     line = line.rstrip('\n')
     if line and not line.startswith('#'):
-        PHON.append(spec_of(line.split('\t')[0]))
+        typed = line.split('\t')[0]
+        if ' ' in typed: continue
+        PHON.append(spec_of(typed))
 
 # Unicode specs — note the corrected vowel behaviour (matches macOS):
 #   f -> া,  ^f -> অ,  ^f f -> আ,  isolated matras stay matras.
