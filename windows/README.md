@@ -49,7 +49,7 @@
    Phonetic / English**, or use **Ctrl+Alt+V** (Unicode), **Ctrl+Alt+B** (Classic),
    **Ctrl+Alt+P** (Phonetic) — each toggles back to English. Then type in any app: on the
    fixed layouts a prebase vowel typed *before* its consonant reorders (`ে`+`ক`→`কে`,
-   `ভ া স র্ ন`→`ভার্সন`); on **Phonetic** you just type the sound (`ami`→আমি, `bhalO`→ভালো).
+   `ভ া স র্ ন`→`ভার্সন`); on **Phonetic** you just type the sound (`ami`→আমি, `hyalO`→হ্যালো, `TesT`→টেস্ট) — see the **[phonetic cheat sheet](../docs/PHONETIC.md)**.
 3. **Voice typing** (opt-in during install): **Ctrl+Alt+S** = Bangla, **Ctrl+Alt+D** = English.
    Free, nothing stored; speak the punctuation ("দাঁড়ি"→।, "কমা"→,, "প্রশ্ন"→?). Needs a mic + internet.
 

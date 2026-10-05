@@ -43,7 +43,7 @@ More: [`windows/README.md`](windows/README.md).
 
 More: [`linux/README.md`](linux/README.md).
 
-> **Typing:** on the **fixed** layouts (Unicode/Classic) type a prebase vowel *before* its consonant and it reorders (`ে`+`ক`→`কে`, `ভ া স র্ ন`→`ভার্সন`). **Bangla Phonetic** instead types Bangla the way it **sounds** — `ami`→আমি, `bhalO`→ভালো, `bangla`→বাংলা — with Bangla appearing as you type (case matters: `t/T`, `d/D`, `o/O`; Caps Lock alone is harmless). **Voice** needs a microphone + internet, is **free with nothing stored**, and you **speak the punctuation** — say the mark alone after a pause: "দাঁড়ি"→। , "কমা"→, , "প্রশ্ন"→? , "বিস্ময়"→!. **Bangla Classic** needs a legacy ANSI ("MJ"-style) font, not included; **Bangla Unicode** works with any Unicode Bangla font.
+> **Typing:** on the **fixed** layouts (Unicode/Classic) type a prebase vowel *before* its consonant and it reorders (`ে`+`ক`→`কে`, `ভ া স র্ ন`→`ভার্সন`). **Bangla Phonetic** instead types Bangla the way it **sounds** — `ami`→আমি, `hyalO`→হ্যালো, `TesT`→টেস্ট, `dhonyobad`→ধন্যবাদ — with Bangla appearing as you type (case matters: `t/T`, `d/D`, `o/O`; Caps Lock alone is harmless). **[Phonetic cheat sheet →](docs/PHONETIC.md)** (rules, everyday words, and what to type when you get the wrong one). **Voice** needs a microphone + internet, is **free with nothing stored**, and you **speak the punctuation** — say the mark alone after a pause: "দাঁড়ি"→। , "কমা"→, , "প্রশ্ন"→? , "বিস্ময়"→!. **Bangla Classic** needs a legacy ANSI ("MJ"-style) font, not included; **Bangla Unicode** works with any Unicode Bangla font.
 
 ## How it works — one engine, three thin shells
 

@@ -81,14 +81,19 @@ Then add it as an input source:
 type a prebase vowel **before** its consonant and it reorders (`ে`+`ক`→`কে`); reph after a
 consonant reorders (`ভার্সন`); independent vowels: `f`→া, `Shift+f`→অ, `Shift+f` then `f`→আ.
 
-**Bangla Phonetic** types Bangla the way it **sounds** — `ami`→আমি, `bhalO`→ভালো,
-`bangla`→বাংলা, `korrmo`→কর্ম — and Bangla appears in the preedit as you type. **Case is
+**Bangla Phonetic** types Bangla the way it **sounds** — `ami`→আমি, `hyalO`→হ্যালো,
+`TesT`→টেস্ট, `dhonyobad`→ধন্যবাদ — and Bangla appears in the preedit as you type.
+**Case is
 significant** for some letters (`t/T d/D n/N r/R s/S o/O i/I u/U j/J y/Y z/Z G`); Shift on
 any other letter is just lowercase, and **Caps Lock alone stays the plain map**, so an
 accidental Caps Lock can't garble a word. Non-letter keys: `` ` `` joins consonants
 (``jan`te``→জানতে), `,,`→হসন্ত, `.`→।, `:`→ঃ, digits→০-৯, `$`→৳, `^`→ঁ. A static layout can't
 have a dictionary, so common words are built-in exceptions (`amra` আমরা, `ekTa` একটা,
 `apni` আপনি).
+
+📖 **[Phonetic cheat sheet →](../docs/PHONETIC.md)** — the 5 rules that matter, ~50 everyday
+words (`hyalO` হ্যালো, `TesT` টেস্ট, `dhonyobad` ধন্যবাদ …) and what to type when you get the
+wrong word. Every example on it is checked against the real engine.
 
 **Bangla Classic** outputs the legacy ASCII (non-Unicode) encoding of legacy ANSI
 ("MJ"-style) Bangla fonts. Those fonts are proprietary and **not** included — install a
